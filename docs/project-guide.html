@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PaperMind Exam Grading: Project Guide</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --card: #ffffff; --ink: #1b2438; --soft: #4a5468; --muted: #7a8396; --line: #e2dfd6;
+    --accent: #1f6f68; --accent-soft: #e3f1ef; --warn: #a15c07; --warn-soft: #fdf1dc; --bad: #a3322c; --bad-soft: #fbe6e4;
+    --ok: #2b7a47; --ok-soft: #e4f3ea; --code-bg: #f2efe7; --code-ink: #2c3550;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161f; --card: #1a2030; --ink: #e7ebf3; --soft: #b4bccd; --muted: #8590a6; --line: #2b3347;
+      --accent: #5cc4ba; --accent-soft: #17302f; --warn: #f0b255; --warn-soft: #33270f; --bad: #f08a83; --bad-soft: #3a1c1a;
+      --ok: #7fd49a; --ok-soft: #14301f; --code-bg: #0f131c; --code-ink: #cdd6ee;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 Georgia, "Times New Roman", serif; }
+  h1, h2, h3, h4, nav, .tag, table, button, .sans { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); max-width: 1320px; margin: 0 auto; }
+  nav#toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 28px 18px 40px 24px; border-right: 1px solid var(--line); font-size: 14px; }
+  nav#toc .brand { font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+  nav#toc .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 18px; }
+  nav#toc a { display: block; color: var(--soft); text-decoration: none; padding: 5px 10px; border-radius: 6px; border-left: 3px solid transparent; }
+  nav#toc a:hover { background: var(--accent-soft); color: var(--ink); }
+  nav#toc a.active { background: var(--accent-soft); color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  main { padding: 36px 44px 90px; max-width: 980px; }
+  header.hero { padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .tag { display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 38px; line-height: 1.15; margin: 8px 0 12px; }
+  h2 { font-size: 27px; margin: 54px 0 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  h2 .num { color: var(--accent); margin-right: 8px; }
+  h3 { font-size: 19px; margin: 30px 0 8px; }
+  h4 { font-size: 15px; margin: 20px 0 6px; color: var(--soft); text-transform: uppercase; letter-spacing: .05em; }
+  p { margin: 10px 0; }
+  .lead { font-size: 19px; color: var(--soft); max-width: 760px; }
+  a { color: var(--accent); }
+  code, pre { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 13.5px; }
+  code { background: var(--code-bg); color: var(--code-ink); padding: 1px 6px; border-radius: 5px; }
+  pre { background: var(--code-bg); color: var(--code-ink); padding: 14px 16px; border-radius: 10px; overflow-x: auto; line-height: 1.55; border: 1px solid var(--line); position: relative; }
+  pre code { background: none; padding: 0; }
+  button.copy { position: absolute; top: 8px; right: 8px; font-size: 12px; border: 1px solid var(--line); background: var(--card); color: var(--soft); border-radius: 6px; padding: 2px 9px; cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 14px 0 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th { text-align: left; background: var(--accent-soft); color: var(--ink); padding: 9px 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin: 16px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .card h4 { margin-top: 0; }
+  .card p { margin: 6px 0; font-size: 15px; color: var(--soft); }
+  .stat { font-family: -apple-system, "Segoe UI", sans-serif; font-size: 30px; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 18px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .callout.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .callout > :first-child { margin-top: 0; } .callout > :last-child { margin-bottom: 0; }
+  .callout strong.t { font-family: -apple-system, "Segoe UI", sans-serif; display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 18px 0; }
+  ol.steps > li { counter-increment: s; position: relative; margin: 0 0 14px; padding: 12px 16px 12px 62px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 16px; top: 12px; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font: 700 15px/32px -apple-system, "Segoe UI", sans-serif; text-align: center; }
+  ol.steps h3 { margin: 0 0 4px; font-size: 17px; }
+  ol.steps p { margin: 4px 0; font-size: 15px; color: var(--soft); }
+  .who { display: inline-block; font: 600 11.5px -apple-system, "Segoe UI", sans-serif; padding: 1px 8px; border-radius: 999px; margin-right: 5px; }
+  .who.browser { background: #dbe9fb; color: #1d4f91; } .who.server { background: var(--ok-soft); color: var(--ok); } .who.model { background: var(--warn-soft); color: var(--warn); } .who.teacher { background: #efe2f7; color: #6b2d8f; }
+  @media (prefers-color-scheme: dark) { .who.browser { background: #1c2f4b; color: #8fbdf5; } .who.teacher { background: #2e1c3b; color: #d3a7ee; } }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 16px; margin: 12px 0; }
+  details > summary { cursor: pointer; font: 600 15.5px -apple-system, "Segoe UI", sans-serif; padding: 10px 0; }
+  details[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  svg { max-width: 100%; height: auto; display: block; margin: 18px auto; }
+  svg text { font-family: -apple-system, "Segoe UI", sans-serif; fill: var(--ink); }
+  svg .box { fill: var(--card); stroke: var(--line); stroke-width: 1.6; }
+  svg .a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+  svg .w { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.6; }
+  svg .o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.6; }
+  svg .grp { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 6 5; }
+  svg .ar { stroke: var(--soft); stroke-width: 1.8; fill: none; marker-end: url(#head); }
+  svg .sm { font-size: 12.5px; fill: var(--soft); } svg .md { font-size: 14.5px; font-weight: 600; } svg .gt { font-size: 13px; font-weight: 700; fill: var(--muted); }
+  .kbd { font: 12px Consolas, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; background: var(--card); }
+  footer { margin-top: 70px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 920px) {
+    .layout { display: block; } nav#toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+    nav#toc a { display: inline-block; } main { padding: 22px 18px 70px; } h1 { font-size: 30px; }
+  }
+  @media print { nav#toc { display: none; } .layout { display: block; } details { break-inside: avoid; } body { font-size: 13px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav id="toc" aria-label="Sections">
+  <div class="brand">PaperMind Guide</div>
+  <div class="sub">AI-powered exam grading</div>
+  <a href="#overview">1. The project in 2 minutes</a>
+  <a href="#origin">2. Where it came from</a>
+  <a href="#stack">3. Tech stack</a>
+  <a href="#architecture">4. Architecture</a>
+  <a href="#workflow">5. End-to-end workflow</a>
+  <a href="#grading">6. The grading pipeline</a>
+  <a href="#review">7. Review rules</a>
+  <a href="#key">8. Answer-key extraction</a>
+  <a href="#data">9. Data model</a>
+  <a href="#api">10. API reference</a>
+  <a href="#backend">11. Backend code tour</a>
+  <a href="#frontend">12. Frontend code tour</a>
+  <a href="#security">13. Security</a>
+  <a href="#run">14. Run it yourself</a>
+  <a href="#results">15. Tests and results</a>
+  <a href="#limits">16. Limits and known issues</a>
+  <a href="#change">17. "Where do I change X?"</a>
+  <a href="#qa">18. Questions you will be asked</a>
+  <a href="#glossary">19. Glossary</a>
+  <a href="#credits">20. Credits and licences</a>
+</nav>
+
+<main>
+<header class="hero">
+  <span class="tag">Team reference</span>
+  <h1>PaperMind: AI-Powered Exam Grading</h1>
+  <p class="lead">A web application that reads handwritten exam answer sheets and grades them against a typed answer key, using AI models that run entirely on the teacher's own computer. The teacher stays in charge: every uncertain mark is sent back for review.</p>
+  <p class="sans" style="color:var(--muted);font-size:14px">Written for the team so everyone can understand the project we inherited, how it works inside, and how to run, explain and extend it. Repository: <a href="https://github.com/samyy2323/papermind-exam-grading">github.com/samyy2323/papermind-exam-grading</a></p>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="overview">
+<h2><span class="num">1</span>The project in 2 minutes</h2>
+<p><strong>The problem.</strong> Descriptive exam answers are slow and tiring to mark. A teacher reads every page of every script, compares it with a marking scheme, and decides partial marks. The same answer can get different marks at different times of day.</p>
+<p><strong>What we built.</strong> A teacher signs in, creates an exam, uploads the typed answer key, and then uploads each student's handwritten sheet as photos or a PDF. The system reads the handwriting, grades every question against the key, and shows each mark with a confidence value and a one-line reason. Anything doubtful goes to a review queue where the teacher accepts or overrides the mark. Results and class analytics are shown on a dashboard.</p>
+
+<div class="grid">
+  <div class="card"><div class="stat">2</div><p><strong>AI models</strong>, both local: Qwen2.5-VL (reads handwriting) and Llama 3 (grades).</p></div>
+  <div class="card"><div class="stat">0</div><p><strong>Cloud calls and fees.</strong> Student scripts never leave the teacher's computer.</p></div>
+  <div class="card"><div class="stat">35</div><p><strong>Questions</strong> in the test paper we used (20 MCQ at 1 mark, 15 short answers at 2 marks).</p></div>
+  <div class="card"><div class="stat">~15 min</div><p><strong>Per 6-page sheet</strong> on a laptop with no graphics card: about 12 minutes reading the handwriting and 3 minutes grading.</p></div>
+</div>
+
+<div class="callout"><strong class="t">The one-sentence version</strong>
+<p>Photos or PDF of a handwritten sheet go in; a vision model turns them into text; a language model marks each answer against the teacher's answer key; the teacher reviews the doubtful ones and gets final marks and analytics.</p></div>
+
+<h3>The three ideas to remember</h3>
+<ol>
+  <li><strong>Two models, two jobs.</strong> One model only <em>reads</em> (image to text); another only <em>judges</em> (text to marks). Each does what it is good at.</li>
+  <li><strong>Local first.</strong> Everything runs through Ollama on the teacher's machine. That is the privacy and cost story.</li>
+  <li><strong>Teacher in the loop.</strong> The AI never has the last word on an answer it is unsure about. This is what makes it usable in a real examination.</li>
+</ol>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="origin">
+<h2><span class="num">2</span>Where it came from</h2>
+<p>We started from an existing open-source repository, <a href="https://github.com/sarvaji18rolex/AI_POWERED_EXAM_GRADING_SYSTEM_USING_MULTI_MODELS">sarvaji18rolex/AI_POWERED_EXAM_GRADING_SYSTEM_USING_MULTI_MODELS</a> (Apache-2.0). It already proved the core idea: one upload form, one request, and a chain of AI steps that returned a single score. We kept its AI agents and built a full application around them.</p>
+
+<h3>What the original gave us, and what we added</h3>
+<div class="scroll"><table>
+<tr><th>Area</th><th>Original repository</th><th>Now</th></tr>
+<tr><td>Interface</td><td>One HTML form served by FastAPI at <code>/</code></td><td>A React single-page app (exams, roster, upload, review, analytics) at port 5173. The old page still exists at port 8000.</td></tr>
+<tr><td>Accounts</td><td>None</td><td>Teacher sign-up and sign-in, password hashing, signed tokens, each teacher sees only their own data</td></tr>
+<tr><td>Exams</td><td>The answer key was pasted or uploaded with every request</td><td>Exams with a question list, marks per question, editing and a publish step that locks the paper</td></tr>
+<tr><td>Grading</td><td>One request ran everything and waited for the answer. The model wrote the total in its own text and the code regexed it.</td><td>A background job per sheet with progress. The model returns per-question JSON; totals are computed in code from the approved marks.</td></tr>
+<tr><td>Results</td><td>A single number and a confidence word</td><td>Per-question marks, extracted text, justification, confidence, relevance, flags, overrides, analytics</td></tr>
+<tr><td>Database</td><td>MySQL (needed a separate server and password)</td><td>SQLite, one local file, nothing to install</td></tr>
+<tr><td>Missing code</td><td>The <code>utils/</code> package was imported but never committed</td><td>We wrote <code>utils/ollama_client.py</code> and <code>utils/pdf_utils.py</code></td></tr>
+<tr><td>Front end</td><td>n/a</td><td>The UI came from our separate PaperMind prototype, whose demo data we removed and wired to this backend</td></tr>
+</table></div>
+
+<div class="callout warn"><strong class="t">Do not be confused by the old pieces</strong>
+<p>These files are from the original project and still exist: <code>ai_exam_system/crew.py</code>, <code>agents/scheme_builder.py</code>, <code>agents/validator.py</code>, <code>templates/index.html</code>, <code>static/</code>, <code>test_api.py</code>, and the routes <code>POST /evaluate</code> and <code>GET /results</code>. They power the old single-form flow. The new exam workflow does not use them (except the Extractor agent and <code>unload_model</code> from <code>crew.py</code>). Also, <code>requirements.txt</code> still lists <code>pymysql</code>, <code>pdf2image</code> and <code>cryptography</code>, which the current code no longer needs.</p></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="stack">
+<h2><span class="num">3</span>Tech stack</h2>
+<div class="scroll"><table>
+<tr><th>Layer</th><th>Technology</th><th>What it does here, and why it was chosen</th></tr>
+<tr><td>Vision model</td><td>Qwen2.5-VL 3B (<code>qwen2.5vl:3b</code>)</td><td>Reads handwriting straight from page images. A 3-billion-parameter model fits a laptop's memory; there is no separate OCR engine such as Tesseract.</td></tr>
+<tr><td>Language model</td><td>Llama 3 8B (<code>llama3:latest</code>)</td><td>Judges each answer against the reference answer and returns structured JSON. Also structures free-form answer keys.</td></tr>
+<tr><td>Model runtime</td><td>Ollama</td><td>Downloads and serves both models on <code>localhost:11434</code> with one simple HTTP API. Also lets us unload a model from memory between stages.</td></tr>
+<tr><td>Back end</td><td>Python 3.10, FastAPI, Uvicorn</td><td>Async web framework; background jobs run with <code>asyncio</code>. Auto-generates API docs at <code>/docs</code>.</td></tr>
+<tr><td>Database</td><td>SQLite via SQLAlchemy</td><td>One file (<code>exam_ai.db</code>), no server, perfect for a local single-teacher tool. SQLAlchemy makes it easy to swap later.</td></tr>
+<tr><td>PDF and images</td><td>PyMuPDF, Pillow</td><td>Render PDF pages to images, merge uploads into one PDF, read text from typed PDFs, resize images for the model.</td></tr>
+<tr><td>HTTP client</td><td>httpx, aiofiles</td><td>Async calls to Ollama and non-blocking file saving.</td></tr>
+<tr><td>Front end</td><td>React 18, Vite 6, React Router</td><td>Single-page app with fast hot reload during development.</td></tr>
+<tr><td>Styling and charts</td><td>Tailwind CSS 4, Recharts</td><td>Utility-class styling; bar charts on the analytics page.</td></tr>
+<tr><td>Front-end utilities</td><td>Axios, react-dropzone</td><td>API calls with an auth header; drag-and-drop upload.</td></tr>
+<tr><td>Security</td><td>PBKDF2-HMAC-SHA256, HMAC-signed tokens</td><td>Standard-library crypto, no extra dependencies.</td></tr>
+</table></div>
+<p>Everything above is free and open source. Nothing is rented by the hour.</p>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="architecture">
+<h2><span class="num">4</span>Architecture</h2>
+<p>Four layers, from what the teacher sees down to the models:</p>
+
+<svg viewBox="0 0 900 520" role="img" aria-label="System architecture diagram">
+  <defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--soft)"/></marker></defs>
+  <rect class="grp" x="10" y="8" width="880" height="96" rx="14"/><text class="gt" x="26" y="30">BROWSER</text>
+  <rect class="box" x="40" y="42" width="190" height="46" rx="10"/><text class="md" x="135" y="70" text-anchor="middle">Teacher</text>
+  <rect class="a" x="290" y="42" width="560" height="46" rx="10"/><text class="md" x="570" y="70" text-anchor="middle">React app (Vite, Tailwind, Axios) · port 5173</text>
+  <path class="ar" d="M230 65 H290"/>
+  <path class="ar" d="M570 104 V138"/><text class="sm" x="580" y="126">/api (JSON and file uploads)</text>
+
+  <rect class="grp" x="10" y="140" width="880" height="170" rx="14"/><text class="gt" x="26" y="162">FASTAPI BACK END · port 8000</text>
+  <rect class="o" x="30" y="176" width="190" height="46" rx="9"/><text class="sm" x="125" y="204" text-anchor="middle">Auth routes</text>
+  <rect class="o" x="236" y="176" width="190" height="46" rx="9"/><text class="sm" x="331" y="204" text-anchor="middle">Exams and answer keys</text>
+  <rect class="o" x="442" y="176" width="190" height="46" rx="9"/><text class="sm" x="537" y="204" text-anchor="middle">Roster</text>
+  <rect class="o" x="648" y="176" width="222" height="46" rx="9"/><text class="sm" x="759" y="204" text-anchor="middle">Submissions, review, analytics</text>
+  <rect class="w" x="30" y="242" width="420" height="54" rx="9"/><text class="md" x="240" y="266" text-anchor="middle">Grading worker (background job)</text><text class="sm" x="240" y="285" text-anchor="middle">one sheet at a time, in a queue</text>
+  <rect class="box" x="470" y="242" width="400" height="54" rx="9"/><text class="md" x="670" y="266" text-anchor="middle">Security</text><text class="sm" x="670" y="285" text-anchor="middle">hashed passwords · signed tokens · per-teacher access</text>
+
+  <path class="ar" d="M240 296 V352"/>
+  <path class="ar" d="M670 296 V352"/>
+  <rect class="grp" x="10" y="338" width="520" height="168" rx="14"/><text class="gt" x="26" y="360">OLLAMA · local models · port 11434</text>
+  <rect class="a" x="30" y="378" width="224" height="104" rx="10"/><text class="md" x="142" y="408" text-anchor="middle">Extractor agent</text><text class="sm" x="142" y="430" text-anchor="middle">Qwen2.5-VL 3B</text><text class="sm" x="142" y="450" text-anchor="middle">handwriting image to text</text>
+  <rect class="a" x="286" y="378" width="224" height="104" rx="10"/><text class="md" x="398" y="408" text-anchor="middle">Evaluator agent</text><text class="sm" x="398" y="430" text-anchor="middle">Llama 3 8B</text><text class="sm" x="398" y="450" text-anchor="middle">answer + key to marks</text>
+  <path class="ar" d="M254 430 H286"/>
+  <rect class="grp" x="560" y="338" width="330" height="168" rx="14"/><text class="gt" x="576" y="360">DATA ON DISK</text>
+  <rect class="box" x="580" y="378" width="290" height="46" rx="9"/><text class="sm" x="725" y="406" text-anchor="middle">SQLite · exam_ai.db</text>
+  <rect class="box" x="580" y="436" width="290" height="46" rx="9"/><text class="sm" x="725" y="464" text-anchor="middle">data/input/ · uploads and sheet.pdf</text>
+</svg>
+
+<h3>How the layers talk</h3>
+<ul>
+  <li>The browser only ever talks to the Vite dev server. Vite forwards every URL starting with <code>/api</code> to the back end (<code>vite.config.js</code> proxy), so there are no cross-origin problems.</li>
+  <li>The back end never makes the browser wait for the AI. An upload saves the files, creates a <em>submission</em> row, starts a background task and answers immediately; the browser polls the status every 3 seconds.</li>
+  <li>Only <code>grader.py</code> talks to the models, through <code>utils/ollama_client.py</code>, which POSTs to Ollama's <code>/api/generate</code>.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="workflow">
+<h2><span class="num">5</span>End-to-end workflow</h2>
+<p>This is the whole life of one exam, in the order it happens. The coloured tags show who does the work.</p>
+<p><span class="who teacher">Teacher</span> acts in the app · <span class="who browser">Browser</span> front end · <span class="who server">Server</span> FastAPI · <span class="who model">Model</span> Ollama</p>
+
+<ol class="steps">
+  <li><h3>Create an account and sign in</h3>
+    <p><span class="who teacher">Teacher</span> fills the sign-up form. <span class="who server">Server</span> checks name, email format and a 6-character minimum password, stores a salted hash, and returns a signed token. <span class="who browser">Browser</span> keeps the token in <code>localStorage</code> and sends it on every request.</p></li>
+  <li><h3>Create the exam</h3>
+    <p><span class="who teacher">Teacher</span> enters title, subject, sub-domain, total marks and number of questions. <span class="who server">Server</span> creates the exam as a <em>draft</em> and links it to a class for that teacher and sub-domain (the roster lives on the class).</p></li>
+  <li><h3>Upload the answer key</h3>
+    <p><span class="who teacher">Teacher</span> uploads a typed PDF. <span class="who server">Server</span> reads its text and finds numbered entries (<code>1. answer</code>); if that fails it asks <span class="who model">Llama 3</span> to structure it. It returns the questions without saving them. The page then shows the real PDF next to the extracted questions.</p></li>
+  <li><h3>Check and fix the questions</h3>
+    <p><span class="who teacher">Teacher</span> edits question text, type (objective or subjective), reference answer and marks. Marks must add up to the exam total before publishing is allowed. <span class="who server">Server</span> saves the list.</p></li>
+  <li><h3>Publish</h3>
+    <p>Publishing validates the marks total and <strong>locks</strong> the questions, so every student is graded against the same paper.</p></li>
+  <li><h3>Add students and upload a sheet</h3>
+    <p><span class="who teacher">Teacher</span> adds the student to the class roster and drops the sheet: photos, a PDF, or both. <span class="who server">Server</span> saves the files, renders any PDF pages to images, and builds <strong>one combined PDF</strong> (<code>sheet.pdf</code>) for the teacher to review later. It creates a submission and queues grading.</p></li>
+  <li><h3>Read the handwriting</h3>
+    <p><span class="who server">Server</span> unloads Llama 3 from memory, then <span class="who model">Qwen2.5-VL</span> receives all page images (each shrunk to at most 768 px) and returns the written text with question numbers.</p></li>
+  <li><h3>Grade the answers</h3>
+    <p><span class="who server">Server</span> unloads Qwen, then Multiple-choice questions are marked <strong>in code</strong> by comparing the chosen letter with the key. <span class="who model">Llama 3</span> grades only the descriptive questions, in batches of eight, each seeing just its own answer. It returns the marks, a confidence and a short justification as JSON.</p></li>
+  <li><h3>Compute scores and flags</h3>
+    <p><span class="who server">Server</span> clamps each mark to the question's maximum, computes a relevance score, and stores one answer row per question. The sheet status becomes <em>graded</em>.</p></li>
+  <li><h3>Review</h3>
+    <p><span class="who teacher">Teacher</span> opens the review dashboard. Sheets with doubtful answers show <em>Needs review</em>. The teacher reads the answer sheet PDF, accepts the AI mark or overrides it with a reason. Totals use the override when there is one.</p></li>
+  <li><h3>Analytics</h3>
+    <p><span class="who server">Server</span> computes average, median, highest, a ten-band score distribution, per-question averages and flag counts; <span class="who browser">Browser</span> draws them as charts.</p></li>
+</ol>
+
+<h3>What the progress screen means</h3>
+<table>
+<tr><th>Stage shown</th><th>Server state</th><th>What is happening</th></tr>
+<tr><td>Reading handwriting</td><td><code>queued</code> or <code>ocr</code></td><td>Waiting for the single model slot, then Qwen2.5-VL reading the images. The slowest step.</td></tr>
+<tr><td>Grading answers</td><td><code>grading</code></td><td>Llama 3 working through batches of questions.</td></tr>
+<tr><td>Done</td><td><code>done</code></td><td>Marks saved; the page links to the result.</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="grading">
+<h2><span class="num">6</span>The grading pipeline in depth</h2>
+<p>All of this lives in <code>ai_exam_system/grader.py</code> and the two agents in <code>agents/</code>.</p>
+
+<svg viewBox="0 0 900 250" role="img" aria-label="Grading pipeline diagram">
+  <rect class="box" x="10" y="40" width="128" height="86" rx="10"/><text class="md" x="74" y="76" text-anchor="middle">Photos / PDF</text><text class="sm" x="74" y="98" text-anchor="middle">uploaded</text>
+  <rect class="box" x="162" y="40" width="128" height="86" rx="10"/><text class="md" x="226" y="76" text-anchor="middle">Page images</text><text class="sm" x="226" y="98" text-anchor="middle">PyMuPDF · 768 px</text>
+  <rect class="a" x="314" y="40" width="128" height="86" rx="10"/><text class="md" x="378" y="76" text-anchor="middle">Qwen2.5-VL</text><text class="sm" x="378" y="98" text-anchor="middle">image to text</text>
+  <rect class="a" x="466" y="40" width="128" height="86" rx="10"/><text class="md" x="530" y="76" text-anchor="middle">Llama 3</text><text class="sm" x="530" y="98" text-anchor="middle">8 questions / batch</text>
+  <rect class="o" x="618" y="40" width="128" height="86" rx="10"/><text class="md" x="682" y="76" text-anchor="middle">Marks + flags</text><text class="sm" x="682" y="98" text-anchor="middle">clamp · relevance</text>
+  <rect class="w" x="770" y="40" width="120" height="86" rx="10"/><text class="md" x="830" y="76" text-anchor="middle">Teacher</text><text class="sm" x="830" y="98" text-anchor="middle">review queue</text>
+  <path class="ar" d="M138 83 H162"/><path class="ar" d="M290 83 H314"/><path class="ar" d="M442 83 H466"/><path class="ar" d="M594 83 H618"/><path class="ar" d="M746 83 H770"/>
+  <rect class="o" x="400" y="170" width="260" height="56" rx="10"/><text class="md" x="530" y="196" text-anchor="middle">Answer key (questions + marks)</text><text class="sm" x="530" y="214" text-anchor="middle">fixed when the exam is published</text>
+  <path class="ar" d="M530 170 V126"/>
+</svg>
+
+<h3>Step by step</h3>
+<details open><summary>1. Preparing the images</summary>
+<p>PDF pages are rendered with PyMuPDF at 150 dpi and saved as JPEGs (<code>utils/pdf_utils.py</code>). Photos are used as they are. Before the vision model sees them, the Extractor agent converts each to RGB, shrinks it so the longer side is at most 768 pixels, and base64-encodes it. This keeps memory and token use down.</p>
+</details>
+<details open><summary>2. Reading the handwriting (Extractor agent)</summary>
+<p><code>agents/extractor.py</code> sends all pages in one request to <code>qwen2.5vl:3b</code> with the instruction to return only the handwritten text and keep the question numbers. The context window is set to 8,192 tokens. This is important: Ollama's default is 4,096, which was too small for a four-page sheet and made Ollama return an HTTP 400 error.</p>
+</details>
+<details open><summary>3. Freeing memory</summary>
+<p>Between the stages the job calls <code>unload_model</code> (an Ollama request with <code>keep_alive: 0</code>), so only one model sits in RAM at a time. On a 16 GB laptop both would not fit comfortably.</p>
+</details>
+<details open><summary>4. Cutting the text into answers, and marking MCQs in code</summary>
+<p><code>grader.split_answers</code> cuts the extracted text into one answer per question using the numbers the student wrote ("21. Supervised Learning is..."). It looks for each question number after the previous one, so a numbered list inside an answer cannot be mistaken for the next question, and it stops an answer where a stray number begins. If fewer than half of the questions can be found this way, the grader falls back to giving the model the whole text and letting it search.</p>
+<p>For a single-choice question, <code>grade_objective</code> compares the option the student wrote ("D) All of the mentioned" gives D) with the key ("B"). It is exact and instant, and it removes 20 of the 35 questions from the AI's workload. If either side does not name a clear option, the question goes to the model instead.</p>
+</details>
+<details open><summary>5. Grading the descriptive answers (Evaluator agent)</summary>
+<p><code>agents/evaluator.py → evaluate_questions</code> builds a prompt per batch of eight questions. Each question shows its text, maximum marks, expected answer and <em>the student's own answer</em>. The model must reply with only this JSON object, and Ollama is given the schema so that it stops when the JSON is complete:</p>
+<pre><code>{"results": [{"question_number": 21, "awarded": 2,
+              "confidence": 0.9, "justification": "Captures the essence"}]}</code></pre>
+<p>Two guards keep the CPU from being wasted: the JSON schema, and a hard cap on reply length (80 tokens per question). Without them the model once kept writing for 20 minutes per batch. The prompt also says clearly that <strong>confidence means how sure the grader is of its own mark</strong>, not how correct the student is.</p>
+</details>
+<details><summary>6. Turning the results into marks</summary>
+<ul>
+<li>The reply is parsed with a forgiving parser: if the array is malformed it keeps every well-formed <code>{...}</code> object, so one bad entry does not lose the batch.</li>
+<li>Each mark is clamped to the range 0 to the question's maximum.</li>
+<li>A question the model did not return becomes <strong>0 marks, confidence 0.3, flagged "parse failure"</strong>, so the teacher is asked to look at it.</li>
+<li>Objective questions get relevance 1.0. Subjective answers get a word-overlap relevance score (next section).</li>
+<li>The totals shown to the teacher are computed in code by adding the effective mark of each answer. The model is never asked to add anything up.</li>
+</ul>
+</details>
+<details><summary>7. Concurrency, failure and restart behaviour</summary>
+<ul>
+<li>An <code>asyncio.Lock</code> makes the jobs run one at a time, because the CPU can only run one model pipeline at once. Extra uploads wait in <code>queued</code>.</li>
+<li>If a stage throws, the submission gets an error message and stays in <em>processing</em>; the review page shows it with a <strong>Reprocess</strong> button.</li>
+<li>Jobs live in memory. If the server restarts mid-grading, <code>mark_interrupted()</code> runs at start-up and marks those sheets with an error so they can be reprocessed. <strong>Do not restart the back end while a sheet is grading.</strong></li>
+</ul>
+</details>
+
+<h3>Why is it built this way?</h3>
+<p>On a CPU, <strong>the time is almost all spent generating text</strong>, about 4 tokens per second. So every design choice aims to make the model write less: MCQs are marked in code, each question is given only its own answer, replies are short JSON with a hard cap, and the saved handwriting text means a re-run never reads the pages twice. Batches of eight keep each reply short, so a failure loses a few questions and not the whole sheet.</p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="review">
+<h2><span class="num">7</span>Review rules: when does a mark go to the teacher?</h2>
+<p>An answer goes to the review queue if the teacher has not yet overridden or accepted it <em>and</em> any one of these is true:</p>
+<table>
+<tr><th>Rule</th><th>Condition</th><th>Why</th></tr>
+<tr><td>Low confidence</td><td>confidence &lt; 0.6</td><td>The grader says it is unsure of its own mark (for example unclear handwriting).</td></tr>
+<tr><td>Missing answer</td><td>no answer text was extracted</td><td>Either the student skipped it or the handwriting reading missed it; a person should check.</td></tr>
+<tr><td>Relevance mismatch</td><td>subjective question, relevance &lt; 0.35 <em>and</em> mark ≥ 70% of the maximum</td><td>A high mark for an answer that does not resemble the key can mean a lucky guess, a keyword-stuffed answer, or an attempt to influence the grader.</td></tr>
+<tr><td>Parse failure</td><td>the grader returned nothing usable for the question</td><td>Safety net so nothing silently scores zero.</td></tr>
+</table>
+<h3>Relevance score</h3>
+<p>The share of the student's content words (words longer than three letters, minus common filler) that also appear in the reference answer, multiplied by 1.5 and capped at 1. It is a simple word-overlap measure, not an embedding similarity. It is cheap, it runs instantly, and it is only used for the mismatch rule above.</p>
+<h3>What the teacher can do</h3>
+<ul>
+<li><strong>Accept</strong> the AI mark: the answer leaves the queue.</li>
+<li><strong>Override</strong> with a new score (0 to the question maximum) and a mandatory reason. The server stores who changed it and when, and the override replaces the AI mark in every total.</li>
+</ul>
+<p>The same rules are implemented twice, in <code>grader.py</code> (server totals) and <code>frontend/src/utils/grading.js</code> (what the page shows). If you change a threshold, change it in both.</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="key">
+<h2><span class="num">8</span>Answer-key extraction</h2>
+<p>Implemented in <code>ai_exam_system/key_parser.py</code>.</p>
+<ol>
+<li><strong>Get the text.</strong> A typed PDF is read with PyMuPDF. If a PDF has no text layer (a scan), its pages are rendered and read by the vision model instead. A <code>.txt</code> key is read directly.</li>
+<li><strong>Fast path, no AI.</strong> Look for numbered entries such as <code>1.</code>, <code>Q2)</code>, <code>3:</code> or <code>4,MCQ,B</code>. An entry is accepted only if its number continues the sequence; otherwise the line is treated as a wrapped continuation of the previous entry. Two layouts are understood:
+  <ul>
+    <li><strong>Questions and answers together</strong> (what a teacher normally writes): each entry holds the question, optional option lines (<code>A.</code> / <code>(a)</code>) and an answer line that starts with <code>Answer:</code>, <code>Ans:</code>, <code>Correct answer:</code>, <code>Key:</code> or <code>Solution:</code>. Everything before that line becomes the question text; everything after it becomes the reference answer.</li>
+    <li><strong>Answers only</strong>: one numbered line per answer (for example the dataset's <code>1,MCQ,B</code>).</li>
+  </ul>
+  Marks are read from a tag such as <code>[2 marks]</code> or <code>(2 marks)</code> and from section headings such as <code>Part II: Short Answer (2 Marks Each)</code>. A question is <em>objective</em> if it has two or more option lines or its answer is a single option letter or True/False; otherwise <em>subjective</em>.</li>
+<li><strong>Fallback.</strong> If fewer than 80% of the expected questions are found, the text goes to Llama 3 with a prompt that requests a JSON array of questions.</li>
+<li><strong>Marks.</strong> Marks stated in the key are kept. If any question has no marks, the exam total is spread evenly over all questions and the teacher should correct them. Publishing is blocked until the marks add up to the exam total.</li>
+<li><strong>Question text.</strong> A key that has only answers produces placeholders ("Question 7"), and the teacher has to type the real question text before publishing. A key that contains both questions and answers needs no typing at all.</li>
+</ol>
+<div class="callout"><strong class="t">Tip</strong><p>The cleanest key is a typed PDF where every question is numbered and followed by an <code>Answer:</code> line (and, if you like, a <code>[2 marks]</code> tag). That path is instant and does not depend on the model. Free-form or scanned keys still work, but they go through the slower AI route and need a closer check.</p></div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="data">
+<h2><span class="num">9</span>Data model</h2>
+<p>Seven core tables in <code>exam_ai.db</code> (plus two legacy ones, below), defined in <code>ai_exam_system/models.py</code>. Every id is a short random hex string.</p>
+<div class="scroll"><table>
+<tr><th>Table</th><th>Key columns</th><th>Meaning</th></tr>
+<tr><td>users</td><td>id, name, email (unique), password_hash, role</td><td>Teacher accounts.</td></tr>
+<tr><td>classes</td><td>id, teacher_id, sub_domain</td><td>One class per teacher and sub-domain; it owns the roster.</td></tr>
+<tr><td>roster_students</td><td>id, class_id, name, roll_number</td><td>Students a teacher can upload sheets for.</td></tr>
+<tr><td>exams</td><td>id, teacher_id, class_id, title, subject, sub_domain, total_marks, status, answer_key_file, published_at</td><td>An exam; <code>status</code> is draft or published.</td></tr>
+<tr><td>questions</td><td>id, exam_id, number, type, text, reference_answer, marks</td><td>The marking scheme.</td></tr>
+<tr><td>submissions</td><td>id, exam_id, roster_student_id, student_name, usn, status, stage, error, files_json</td><td>One uploaded sheet and its grading state; <code>files_json</code> lists the page images.</td></tr>
+<tr><td>answers</td><td>id, submission_id, question_id, ocr_text, ai_score, confidence, relevance, justification, flagged_reason, override_score / reason / by / at, reviewed</td><td>One row per question per sheet: the AI result plus the teacher's override.</td></tr>
+</table></div>
+<p>Relationships: a teacher has many classes and exams; a class has many students; an exam has many questions and submissions; a submission has one answer row per question. Deleting an exam that has sheets is refused.</p>
+<p>The original <code>results</code> table (used only by the old <code>/evaluate</code> route) is still created, and so is a <code>knowledge_docs</code> table for a syllabus feature that has no screen any more (see section 16).</p>
+<h3>Files on disk</h3>
+<pre><code>data/input/&lt;submission-id&gt;/   01_page.jpg ... and sheet.pdf (the combined PDF for review)
+data/keys/&lt;exam-id&gt;/          the uploaded answer key
+data/secret.key              random key that signs login tokens (never share or commit)
+exam_ai.db                   the database</code></pre>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="api">
+<h2><span class="num">10</span>API reference</h2>
+<p>All paths start with <code>/api</code>. Everything except register and login needs the header <code>Authorization: Bearer &lt;token&gt;</code>. FastAPI also shows interactive docs at <code>http://127.0.0.1:8000/docs</code>.</p>
+<div class="scroll"><table>
+<tr><th>Method and path</th><th>Purpose</th></tr>
+<tr><td>POST /auth/register</td><td>Create a teacher account; returns user and token</td></tr>
+<tr><td>POST /auth/login</td><td>Sign in; returns user and token</td></tr>
+<tr><td>GET /exams</td><td>List your exams with submission counts</td></tr>
+<tr><td>POST /exams</td><td>Create a draft exam</td></tr>
+<tr><td>GET, PATCH, DELETE /exams/{id}</td><td>Read, edit (draft only) or delete (no sheets only)</td></tr>
+<tr><td>PUT /exams/{id}/questions</td><td>Replace the whole question list (draft only)</td></tr>
+<tr><td>POST /exams/{id}/publish</td><td>Validate marks and lock the exam</td></tr>
+<tr><td>POST /exams/{id}/answer-key</td><td>Upload a key; returns extracted questions (not saved until you save)</td></tr>
+<tr><td>GET /exams/{id}/answer-key-file</td><td>The uploaded key itself, for the in-page PDF viewer</td></tr>
+<tr><td>GET, POST /classes/{id}/roster</td><td>List or add students</td></tr>
+<tr><td>PATCH, DELETE /classes/{id}/roster/{student}</td><td>Edit or remove a student</td></tr>
+<tr><td>POST /students/{id}/answer-sheet</td><td>Upload photos and/or PDFs; starts grading</td></tr>
+<tr><td>GET /answer-sheets/{id}/status</td><td>Progress: status, stage, error</td></tr>
+<tr><td>POST /answer-sheets/{id}/reprocess</td><td>Run grading again for a failed sheet</td></tr>
+<tr><td>GET /answer-sheets/{id}/results</td><td>Exam, submission and every answer</td></tr>
+<tr><td>GET /answer-sheets/{id}/reference-pdf</td><td>The combined answer-sheet PDF</td></tr>
+<tr><td>GET /exams/{id}/submissions</td><td>Dashboard rows for an exam</td></tr>
+<tr><td>GET /exams/{id}/review-queue</td><td>Only the sheets needing review</td></tr>
+<tr><td>PATCH /student-answers/{id}/override</td><td>Override a mark (score and reason required)</td></tr>
+<tr><td>POST /student-answers/{id}/review</td><td>Accept the AI mark</td></tr>
+<tr><td>GET /exams/{id}/analytics</td><td>Class statistics for charts</td></tr>
+<tr><td>GET, POST /knowledge-base; DELETE …/{id}</td><td>Dormant syllabus-document feature (no screen)</td></tr>
+</table></div>
+<p>Typical errors: <code>401</code> not signed in or token expired, <code>404</code> not found (including another teacher's data), <code>409</code> action not allowed in the current state (for example uploading to an unpublished exam), <code>400</code>/<code>422</code> bad input.</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="backend">
+<h2><span class="num">11</span>Backend code tour</h2>
+<div class="scroll"><table>
+<tr><th>File</th><th>Role</th></tr>
+<tr><td>ai_exam_system/main.py</td><td>Creates the FastAPI app, creates tables, registers the two routers, runs <code>mark_interrupted()</code>, and keeps the old <code>/</code>, <code>/evaluate</code>, <code>/results</code> routes.</td></tr>
+<tr><td>ai_exam_system/database.py</td><td>SQLite engine and session factory. <code>get_db()</code> is the dependency every route uses.</td></tr>
+<tr><td>ai_exam_system/models.py</td><td>All table definitions (see section 9).</td></tr>
+<tr><td>ai_exam_system/security.py</td><td>Password hashing, token creation and checking, and the <code>current_user</code> dependency that protects routes.</td></tr>
+<tr><td>ai_exam_system/routes_core.py</td><td>Register/login, exams, questions, publish, answer-key upload and file, roster, and the dormant knowledge-base routes.</td></tr>
+<tr><td>ai_exam_system/routes_submissions.py</td><td>Sheet upload (builds <code>sheet.pdf</code>), status, results, reference PDF, dashboard rows, review queue, overrides, analytics.</td></tr>
+<tr><td>ai_exam_system/grader.py</td><td>The grading job, the review-flag rules, relevance, the tolerant JSON parser, restart handling.</td></tr>
+<tr><td>ai_exam_system/key_parser.py</td><td>Answer-key text extraction and question parsing (section 8).</td></tr>
+<tr><td>ai_exam_system/crew.py</td><td>Original pipeline for <code>/evaluate</code>. We still import <code>unload_model</code> from it.</td></tr>
+<tr><td>agents/extractor.py</td><td>Qwen2.5-VL: images to text.</td></tr>
+<tr><td>agents/evaluator.py</td><td>Llama 3 grading prompts: <code>evaluate_questions</code> (new) and <code>evaluate_answers</code> (original).</td></tr>
+<tr><td>agents/scheme_builder.py, validator.py</td><td>Original agents, used only by the old <code>/evaluate</code> flow.</td></tr>
+<tr><td>utils/ollama_client.py</td><td>One function, <code>generate(model, prompt, images, num_ctx)</code>, that calls Ollama and returns text.</td></tr>
+<tr><td>utils/pdf_utils.py</td><td><code>pdf_to_images</code>, <code>save_images</code> and <code>build_sheet_pdf</code> (merges photos and PDFs into one PDF).</td></tr>
+</table></div>
+
+<h3>Reading order for a newcomer</h3>
+<ol>
+<li><code>models.py</code> to learn the data.</li>
+<li><code>routes_submissions.py → upload_answer_sheet</code> to see how a sheet enters.</li>
+<li><code>grader.py → run_grading</code> to see the whole AI job in about 80 lines.</li>
+<li><code>agents/extractor.py</code> and <code>agents/evaluator.py</code> to see the prompts.</li>
+</ol>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="frontend">
+<h2><span class="num">12</span>Frontend code tour</h2>
+<p>Everything is under <code>frontend/src/</code>.</p>
+<div class="scroll"><table>
+<tr><th>Path</th><th>What is in it</th></tr>
+<tr><td>App.jsx</td><td>The routes. <code>RequireRole</code> sends signed-out users to the login page.</td></tr>
+<tr><td>context/AuthContext.jsx</td><td>Holds the signed-in user and token (kept in <code>localStorage</code>), plus login, register and logout.</td></tr>
+<tr><td>api/index.js, client.js, config.js</td><td>One function per back-end endpoint. <code>client.js</code> adds the token to every request and, on a 401, clears the session and returns to the login page.</td></tr>
+<tr><td>pages/Login.jsx</td><td>Sign-in and create-account form.</td></tr>
+<tr><td>pages/teacher/ExamsList.jsx</td><td>Exam cards with status and counts.</td></tr>
+<tr><td>pages/teacher/ExamEditor.jsx</td><td>Exam details, key upload with progress, in-page key PDF, question editor, publish checks.</td></tr>
+<tr><td>pages/teacher/AnswerSheets.jsx</td><td>Roster, image-or-PDF upload box, page ordering, and the live progress tracker.</td></tr>
+<tr><td>pages/teacher/ReviewDashboard.jsx</td><td>Table of sheets per exam with status, score and a "needs review" tab.</td></tr>
+<tr><td>pages/teacher/SubmissionReview.jsx</td><td>One sheet: score summary, answer-sheet PDF, and the per-question breakdown with overrides.</td></tr>
+<tr><td>pages/teacher/Analytics.jsx</td><td>Score distribution, per-question averages and flag counts using Recharts.</td></tr>
+<tr><td>components/PdfPreview.jsx</td><td>Shows a PDF fetched with the auth header inside the page; used for the answer key and each answer sheet.</td></tr>
+<tr><td>components/QuestionBreakdown.jsx</td><td>The per-question card: extracted text, reference answer, confidence bar, relevance, override form.</td></tr>
+<tr><td>components/ProcessingTracker.jsx</td><td>Polls <code>/status</code> every 3 seconds and shows the three steps.</td></tr>
+<tr><td>utils/grading.js</td><td>The review-flag rules and score summary on the client side.</td></tr>
+</table></div>
+
+<h3>Things that surprise people</h3>
+<ul>
+<li>PDFs fetched with an auth header cannot be a plain link or iframe URL. The code downloads them as a blob and shows an object URL.</li>
+<li>React state is not updated by changing an input's DOM value directly. If you automate the UI (tests, scripts), use the native value setter and dispatch an <code>input</code> event.</li>
+<li>The pages are styled with Tailwind utility classes plus a few custom classes (<code>field</code>, <code>field-label</code>) in <code>index.css</code>.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="security">
+<h2><span class="num">13</span>Security</h2>
+<ul>
+<li><strong>Passwords</strong> are never stored. We store a salted PBKDF2-HMAC-SHA256 hash (200,000 iterations) and compare it in constant time.</li>
+<li><strong>Tokens</strong> contain the user id and an expiry time (7 days), signed with HMAC-SHA256 using the secret in <code>data/secret.key</code>. A forged or expired token gets a 401.</li>
+<li><strong>Isolation.</strong> Every route that touches an exam, class, sheet or answer checks that it belongs to the signed-in teacher and otherwise answers 404, so another teacher's data cannot even be detected.</li>
+<li><strong>Locking.</strong> Published exams cannot be edited; overrides need a reason and record who and when.</li>
+<li><strong>Privacy.</strong> Models run locally, so scripts are not sent to a third party.</li>
+</ul>
+<div class="callout bad"><strong class="t">Not ready for the public internet</strong>
+<p>This is built for one teacher on one computer. Anyone who can reach the server can create an account; there is no rate limiting, no upload size limit, no HTTPS, and the CORS and proxy setup assume localhost. Add those before exposing it.</p></div>
+<div class="callout warn"><strong class="t">Never commit</strong>
+<p><code>data/secret.key</code>, <code>exam_ai.db</code>, uploaded sheets, or any real student data. <code>.gitignore</code> already excludes them.</p></div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="run">
+<h2><span class="num">14</span>Run it yourself</h2>
+<h3>You need</h3>
+<ul>
+<li>Windows, macOS or Linux with <strong>16 GB RAM</strong> recommended (8 GB may work if other programs are closed).</li>
+<li><strong>Python 3.10+</strong>, <strong>Node.js 20+</strong>, <strong>Git</strong>, and <a href="https://ollama.com">Ollama</a>.</li>
+<li>About <strong>10 GB</strong> of free disk space for the two models.</li>
+</ul>
+
+<h3>1. Get the code</h3>
+<pre><button class="copy">copy</button><code>git clone https://github.com/samyy2323/papermind-exam-grading
+cd papermind-exam-grading</code></pre>
+
+<h3>2. Pull the two models (one time, large downloads)</h3>
+<pre><button class="copy">copy</button><code>ollama pull llama3:latest
+ollama pull qwen2.5vl:3b
+ollama list</code></pre>
+
+<h3>3. Back end</h3>
+<pre><button class="copy">copy</button><code>python -m venv venv
+venv\Scripts\activate            # macOS/Linux: source venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn ai_exam_system.main:app --port 8000</code></pre>
+
+<h3>4. Front end (a second terminal)</h3>
+<pre><button class="copy">copy</button><code>cd frontend
+npm install
+npm run dev -- --port 5173</code></pre>
+
+<p>Open <a href="http://127.0.0.1:5173">http://127.0.0.1:5173</a>, choose <em>Create an account</em>, then follow section 5. A small sample paper set for testing is the public dataset in section 20.</p>
+
+<h3>Quick check that everything is up</h3>
+<table>
+<tr><th>Check</th><th>Expected</th></tr>
+<tr><td>http://127.0.0.1:5173</td><td>The PaperMind sign-in page</td></tr>
+<tr><td>http://127.0.0.1:8000/docs</td><td>FastAPI's interactive API page</td></tr>
+<tr><td><code>ollama list</code></td><td>Shows llama3 and qwen2.5vl:3b</td></tr>
+</table>
+
+<h3>Troubleshooting</h3>
+<div class="scroll"><table>
+<tr><th>Symptom</th><th>Likely cause and fix</th></tr>
+<tr><td>Grading fails with "400 Bad Request" from Ollama</td><td>The prompt plus images exceeded the context window. The code sets 8,192 and 12,288 tokens; very long sheets may need a larger value in <code>utils/ollama_client.py</code>.</td></tr>
+<tr><td>"Cannot reach the server"</td><td>The back end is not running on port 8000.</td></tr>
+<tr><td>Progress sits on "Reading handwriting" for ages</td><td>Normal on a CPU: about 2 to 3 minutes per page. Watch the back-end terminal for log lines.</td></tr>
+<tr><td>Sheet shows an error and a Reprocess button</td><td>Ollama was not running, or the server restarted mid-grading. Start Ollama and press Reprocess.</td></tr>
+<tr><td>Signed out suddenly</td><td>The token expired (7 days) or <code>data/secret.key</code> was deleted. Sign in again.</td></tr>
+<tr><td>"Address already in use"</td><td>An old server still holds port 8000 or 5173. Stop it or choose another port (and update <code>vite.config.js</code>'s proxy).</td></tr>
+<tr><td>Memory errors or the laptop freezes</td><td>Close other programs. Only one sheet is graded at a time by design.</td></tr>
+</table></div>
+<div class="callout"><strong class="t">Avoid this</strong><p>Do not restart the back end while a sheet is grading; the job is lost and the sheet will need Reprocess.</p></div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="results">
+<h2><span class="num">15</span>Tests and results</h2>
+<h3>Automated and scripted checks (all passed)</h3>
+<p>We exercised the API with scripts and the full path in a real browser. Highlights: wrong password gives 401; a token-less request gives 401; another teacher's exam gives 404; publishing with a wrong marks total gives 400; uploading to an unpublished exam gives 409; an override above the maximum or without a reason gives 400; the combined PDF downloads as <code>application/pdf</code>; a 35-question numbered key is parsed correctly.</p>
+
+<h3>Grading accuracy so far</h3>
+<div class="scroll"><table>
+<tr><th>Paper</th><th>Teacher total</th><th>AI total</th><th>Notes</th></tr>
+<tr><td>Dataset Student_18</td><td>15 / 50</td><td>15</td><td>First version of the pipeline (whole paper in one request).</td></tr>
+<tr><td>Dataset Student_38</td><td>34 / 50</td><td>30.5</td><td>First version. The AI was 3.5 marks (about 10%) lower.</td></tr>
+<tr><td>Typed Networking quiz (3 questions)</td><td>7 / 10 expected</td><td>7 / 10</td><td>Final pipeline, through the web interface. Q1 4/4, Q2 3/3, Q3 0/3 as designed.</td></tr>
+<tr><td>Dataset Student_13 (the only paper with a teacher total above 40)</td><td>43 / 50</td><td>40 / 50</td><td>Final pipeline on real handwriting, 6 pages, 35 questions. MCQs: 18 vs 19 (the teacher accepted one answer the key marks wrong). Short answers: 22 vs 24. Question by question the AI matched the teacher exactly on 7 of 15 short answers and was within 1 mark on all 15 (mean difference 0.53 marks); it marked 3 questions one mark higher and 5 one mark lower, so errors partly cancelled. No answer needed review.</td></tr>
+</table></div>
+<div class="callout warn"><strong class="t">Be honest about this in the viva</strong>
+<p>Matching totals do not prove accuracy: errors on different questions can cancel out, and we have graded only a handful of papers. A proper evaluation compares marks <em>question by question</em> over many papers. See section 16.</p></div>
+
+<h3>Timing on our laptop (Intel i5-1335U, 15.7 GB RAM, no GPU)</h3>
+<div class="scroll"><table>
+<tr><th>Paper and version</th><th>Reading</th><th>Grading</th><th>Total</th></tr>
+<tr><td>Student_18, 2 pages, first version</td><td>2 min 20 s</td><td>about 9 min</td><td>about 12 min</td></tr>
+<tr><td>Student_38, 4 pages, first version</td><td>5 min</td><td>about 11 min</td><td>about 16 min</td></tr>
+<tr><td>Student_13, 6 pages, per-question grader <em>without</em> length limits</td><td>12 min</td><td>over 25 min for 3 of 5 batches, then stopped</td><td>would have been over 1 hour</td></tr>
+<tr><td>Student_13, 6 pages, final version</td><td>12 min (saved, never repeated)</td><td><strong>about 3 min</strong></td><td>about 15 min</td></tr>
+</table></div>
+<p>Lesson: the third row happened because the model's reply had no length limit, so it kept writing. Reading the pages (about 2 minutes per page) is now the slowest step and cannot be shortened on a CPU without a smaller vision model.</p>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="limits">
+<h2><span class="num">16</span>Limits and known issues</h2>
+<ul>
+<li><strong>Speed.</strong> On a CPU the handwriting reading takes about 2 minutes per page, which dominates the total. A graphics card, or a smaller vision model, would help most.</li>
+<li><strong>Small evaluation.</strong> Only a few papers have been compared with a teacher's marks.</li>
+<li><strong>Handwriting errors flow downstream.</strong> If Qwen misreads a word, the grader sees the wrong text.</li>
+<li><strong>Model variability.</strong> An 8-billion-parameter model can give different marks on a re-run, and its confidence is not a calibrated probability.</li>
+<li><strong>Answers must be labelled</strong> with question numbers. There is no automatic segmentation of unlabelled writing.</li>
+<li><strong>No diagrams or mathematics</strong>, English only.</li>
+<li><strong>In-memory jobs.</strong> A restart loses a sheet that was being graded (it can be reprocessed).</li>
+<li><strong>Dormant syllabus feature.</strong> The back end still has knowledge-base routes and retrieval code (word-overlap matching), but we removed its screen. Real embedding-based retrieval is future work.</li>
+<li><strong>Leftover original code.</strong> The old <code>/evaluate</code> flow, MySQL-era README text and unused dependencies are still in the repository.</li>
+</ul>
+<h3>Ideas for the next version</h3>
+<ul>
+<li>Evaluate on 10 or more dataset papers, question by question, and report agreement statistics.</li>
+<li>Compare with and without a syllabus knowledge base using embedding-based retrieval.</li>
+<li>Rubric-based marking (separate marks for definition, explanation, example).</li>
+<li>Per-page handwriting confidence so unreadable pages are caught early.</li>
+<li>A persistent job queue, an optional student portal, and mark export to spreadsheets.</li>
+</ul>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="change">
+<h2><span class="num">17</span>"Where do I change X?"</h2>
+<div class="scroll"><table>
+<tr><th>I want to…</th><th>Edit this</th></tr>
+<tr><td>Use a different grading or vision model</td><td>Model names in <code>agents/evaluator.py</code>, <code>agents/extractor.py</code> and the two <code>unload_model</code> calls in <code>grader.py</code> (and <code>pull</code> the new model)</td></tr>
+<tr><td>Change how strict the grader is</td><td>The prompt text in <code>agents/evaluator.py → evaluate_questions</code></td></tr>
+<tr><td>Grade more or fewer questions per request</td><td><code>BATCH_SIZE</code> in <code>grader.py</code></td></tr>
+<tr><td>Change review thresholds</td><td><code>CONFIDENCE_THRESHOLD</code>, <code>LOW_RELEVANCE_THRESHOLD</code>, <code>HIGH_SCORE_RATIO</code> in <code>grader.py</code> <em>and</em> <code>frontend/src/utils/grading.js</code></td></tr>
+<tr><td>Handle longer sheets</td><td><code>num_ctx</code> in <code>utils/ollama_client.py</code> and the image size in <code>agents/extractor.py</code></td></tr>
+<tr><td>Add a sub-domain (subject area)</td><td><code>SUB_DOMAINS</code> in <code>frontend/src/utils/grading.js</code></td></tr>
+<tr><td>Change the token lifetime</td><td><code>TOKEN_TTL_SECONDS</code> in <code>ai_exam_system/security.py</code></td></tr>
+<tr><td>Use another database</td><td><code>SQLALCHEMY_DATABASE_URL</code> in <code>ai_exam_system/database.py</code></td></tr>
+<tr><td>Add an API endpoint</td><td>A route in <code>routes_core.py</code> or <code>routes_submissions.py</code>, then a function in <code>frontend/src/api/index.js</code></td></tr>
+<tr><td>Change the look</td><td>Tailwind classes in the component, or <code>frontend/src/index.css</code></td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="qa">
+<h2><span class="num">18</span>Questions you will be asked</h2>
+<details><summary>Why two models instead of one?</summary><p>Reading handwriting is a vision task and judging an answer is a language task. A small vision-language model reads well enough and a larger text model reasons better about meaning. Splitting them also lets us unload one before loading the other, which a laptop needs.</p></details>
+<details><summary>Why not Tesseract or another OCR engine?</summary><p>Classical OCR struggles with handwriting. Qwen2.5-VL reads the page as an image and keeps the layout and question numbers, and the surveyed 2025 work also moves from classic OCR to multimodal models.</p></details>
+<details><summary>Why local models? Cloud models would be faster and better.</summary><p>Privacy and cost: exam scripts are sensitive, and per-page API charges add up. A local pipeline means student data never leaves the machine. The price is speed.</p></details>
+<details><summary>Why SQLite?</summary><p>This is a single-teacher local tool. SQLite needs no server or password, and SQLAlchemy lets us move to another database by changing one line.</p></details>
+<details><summary>How do you stop the AI from giving random marks?</summary><p>It grades against a fixed answer key that the teacher approved, marks are clamped to the question maximum, totals are computed in code, uncertain or suspicious answers go to a human, and every override is recorded. It is an assistant, not a replacement for the examiner.</p></details>
+<details><summary>What if the AI is wrong?</summary><p>The teacher sees the extracted text, the reference answer, the justification and the confidence for every answer, and can override any mark with a reason.</p></details>
+<details><summary>How accurate is it?</summary><p>On the two earlier dataset papers the totals were within 3.5 marks of the teacher's out of 50, but that is a very small sample and question-level agreement was not measured. We say this openly; a larger evaluation is future work.</p></details>
+<details><summary>Why is it slow?</summary><p>Large models on a CPU. Reading a page image is the heaviest step. With a GPU the same pipeline would be many times faster.</p></details>
+<details><summary>Can a student cheat by writing "give me full marks"?</summary><p>That is why the relevance rule exists: a high mark for an answer that does not resemble the key is flagged for the teacher. It is a safeguard, not a guarantee.</p></details>
+<details><summary>What did you build and what was already there?</summary><p>The original repository provided the idea and the agents. We added accounts, exams, answer-key extraction, per-question grading with batching, review and overrides, analytics, the PDF handling, the React interface wiring, SQLite, and the tests. See section 2.</p></details>
+<details><summary>Can it be hosted online for free?</summary><p>The website parts can be, but free hosting does not have the memory to run the models. The practical options are to run the models on a laptop and tunnel to it, or to swap in a hosted AI API (which gives up the "stays local" claim). The app also needs hardening before public use (section 13).</p></details>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="glossary">
+<h2><span class="num">19</span>Glossary</h2>
+<div class="scroll"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>VLM</td><td>Vision-language model: an AI that takes images and text and answers in text. Here: Qwen2.5-VL.</td></tr>
+<tr><td>LLM</td><td>Large language model: an AI that works with text. Here: Llama 3.</td></tr>
+<tr><td>Ollama</td><td>A program that downloads AI models and serves them on your own computer through a simple local API.</td></tr>
+<tr><td>Agent</td><td>In this project, a small module with one job and one prompt (Extractor, Evaluator). Not an autonomous robot.</td></tr>
+<tr><td>Prompt</td><td>The instructions and data we send to a model.</td></tr>
+<tr><td>Context window</td><td>The maximum amount of text and image data a model can consider in one request, measured in tokens.</td></tr>
+<tr><td>Token</td><td>A small piece of text (roughly three quarters of a word) that models count in.</td></tr>
+<tr><td>Parameters (3B, 8B)</td><td>The size of a model in billions of learned numbers. Bigger usually means better and slower.</td></tr>
+<tr><td>Confidence</td><td>The grader's own estimate of how sure it is about the mark. Not a true probability.</td></tr>
+<tr><td>Relevance</td><td>Our word-overlap score of how much an answer resembles the reference answer.</td></tr>
+<tr><td>Override</td><td>The teacher replacing the AI's mark, with a reason.</td></tr>
+<tr><td>Publish</td><td>Locking an exam's questions so every student is graded on the same paper.</td></tr>
+<tr><td>Submission</td><td>One uploaded answer sheet and its grading state.</td></tr>
+<tr><td>Reference answer</td><td>The correct answer from the key that the AI grades against.</td></tr>
+<tr><td>RAG</td><td>Retrieval-augmented generation: adding relevant passages from your own documents to a prompt. Not active in the current interface.</td></tr>
+<tr><td>JWT-style token</td><td>A signed string proving who you are. Ours is a simple HMAC-signed variant.</td></tr>
+<tr><td>Hot reload</td><td>The development server updating the page instantly when you save a file.</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ 20 -->
+<section id="credits">
+<h2><span class="num">20</span>Credits and licences</h2>
+<ul>
+<li><strong>Original project:</strong> <a href="https://github.com/sarvaji18rolex/AI_POWERED_EXAM_GRADING_SYSTEM_USING_MULTI_MODELS">sarvaji18rolex/AI_POWERED_EXAM_GRADING_SYSTEM_USING_MULTI_MODELS</a>, Apache License 2.0. Our repository keeps the licence file and the original history. Apache-2.0 requires keeping the licence and noting changes; this guide's section 2 is that note.</li>
+<li><strong>Test data:</strong> "A Dataset of Digitized Student Examination Papers, Answer Keys, and Manual Evaluations for Automated Grading Research", Dinesh K P, Mendeley Data v1, DOI 10.17632/sf3kvjwknt.1, licence CC BY 4.0 (attribution required). It has 50 handwritten Data Science papers with teacher marks. The data itself is not stored in our repository.</li>
+<li><strong>Models:</strong> Qwen2.5-VL (Alibaba Cloud) and Llama 3 (Meta), used under their own licences through Ollama.</li>
+<li><strong>Libraries:</strong> FastAPI, SQLAlchemy, PyMuPDF, Pillow, httpx, React, Vite, Tailwind CSS, Recharts, Axios and others, each under its own open-source licence.</li>
+</ul>
+<footer>PaperMind project guide · generated for the team from the working codebase · open this file in any browser, it needs no internet connection.</footer>
+</section>
+</main>
+</div>
+
+<script>
+  // Highlight the current section in the sidebar
+  const links = [...document.querySelectorAll('#toc a')];
+  const sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  function spy() {
+    let current = 0;
+    sections.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 140) current = i; });
+    links.forEach((a, i) => a.classList.toggle('active', i === current));
+  }
+  addEventListener('scroll', spy, { passive: true }); spy();
+  // Copy buttons on code blocks
+  document.querySelectorAll('button.copy').forEach(b => b.addEventListener('click', () => {
+    const text = b.parentElement.querySelector('code').innerText;
+    navigator.clipboard?.writeText(text).then(() => { b.textContent = 'copied'; setTimeout(() => b.textContent = 'copy', 1400); });
+  }));
+</script>
+</body>
+</html>

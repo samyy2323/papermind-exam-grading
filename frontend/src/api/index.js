@@ -83,11 +83,22 @@ export const getSubmissions = (examId) => data(http.get(`/exams/${examId}/submis
 export const getReviewQueue = (examId) => data(http.get(`/exams/${examId}/review-queue`));
 export const reprocessSubmission = (submissionId) => data(http.post(`/answer-sheets/${submissionId}/reprocess`));
 
-// Opens the reference PDF (the uploaded photos combined into one file) in a new tab.
-// Fetched with the auth header, so it can't be a plain <a href>.
-export const openReferencePdf = async (submissionId) => {
+// The answer key exactly as it was uploaded, as an object URL for the in-page viewer.
+export const fetchAnswerKeyUrl = async (examId) => {
+  const res = await http.get(`/exams/${examId}/answer-key-file`, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
+};
+
+// The student's whole answer sheet as one PDF (uploaded photos and PDFs combined). Fetched with the
+// auth header, so it can't be a plain <a href>; the caller gets an object URL to show or download.
+export const fetchSheetPdfUrl = async (submissionId) => {
   const res = await http.get(`/answer-sheets/${submissionId}/reference-pdf`, { responseType: 'blob' });
-  const url = URL.createObjectURL(res.data);
+  return URL.createObjectURL(res.data);
+};
+
+// Opens the answer-sheet PDF in a new tab.
+export const openReferencePdf = async (submissionId) => {
+  const url = await fetchSheetPdfUrl(submissionId);
   window.open(url, '_blank', 'noopener');
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };

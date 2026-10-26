@@ -15,9 +15,11 @@ from ai_exam_system.grader import answer_flags, effective_score, needs_review, r
 from ai_exam_system.models import AnswerRow, Exam, RosterStudent, Submission, User, new_id, now_iso
 from ai_exam_system.routes_core import exam_dict, own_exam
 from ai_exam_system.security import current_user
-from utils.pdf_utils import pdf_to_images, save_images
+from utils.pdf_utils import build_sheet_pdf, pdf_to_images, save_images
 
 router = APIRouter(prefix="/api")
+
+SHEET_PDF = "sheet.pdf"  # the combined answer sheet kept next to the uploaded files
 
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
 
@@ -107,7 +109,7 @@ async def upload_answer_sheet(
     base_dir = os.path.join("data", "input", sub_id)
     os.makedirs(base_dir, exist_ok=True)
 
-    image_paths = []
+    image_paths, uploaded = [], []
     for i, upload in enumerate(files, start=1):
         name = os.path.basename(upload.filename or f"page{i}")
         path = os.path.join(base_dir, f"{i:02d}_{name}")
@@ -119,6 +121,13 @@ async def upload_answer_sheet(
             image_paths.append(path)
         else:
             raise HTTPException(status_code=400, detail=f"{name}: unsupported file type. Use photos (JPG, PNG, WebP) or a PDF.")
+        uploaded.append(path)
+
+    # Whatever was uploaded (photos, PDFs or both), the teacher reviews one PDF.
+    try:
+        build_sheet_pdf(uploaded, os.path.join(base_dir, SHEET_PDF))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Could not combine the files into a PDF: {e}")
 
     sub.pages = len(image_paths)
     sub.files_json = json.dumps(image_paths)
@@ -136,7 +145,8 @@ def sheet_status(submission_id: str, user: User = Depends(current_user), db: Ses
 
 
 @router.post("/answer-sheets/{submission_id}/reprocess")
-def reprocess(submission_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+async def reprocess(submission_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    # async so that create_task below has a running event loop (a plain def route runs in a worker thread)
     sub, _ = own_submission(db, user, submission_id)
     if sub.status == "processing" and not sub.error:
         raise HTTPException(status_code=409, detail="This sheet is still being graded.")
@@ -155,18 +165,16 @@ def sheet_results(submission_id: str, user: User = Depends(current_user), db: Se
 @router.get("/answer-sheets/{submission_id}/reference-pdf")
 def reference_pdf(submission_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     sub, _ = own_submission(db, user, submission_id)
+    headers = {"Content-Disposition": f'inline; filename="answer-sheet-{sub.usn}.pdf"'}
     paths = [p for p in json.loads(sub.files_json or "[]") if os.path.exists(p)]
     if not paths:
-        raise HTTPException(status_code=404, detail="The uploaded photos are no longer on the server.")
-    doc = pymupdf.open()
-    for p in paths:
-        img = pymupdf.open(p)
-        page = doc.new_page(width=img[0].rect.width, height=img[0].rect.height)
-        page.insert_image(page.rect, filename=p)
-        img.close()
-    data = doc.tobytes()
-    doc.close()
-    return Response(content=data, media_type="application/pdf")
+        raise HTTPException(status_code=404, detail="The uploaded files are no longer on the server.")
+    stored = os.path.join(os.path.dirname(paths[0]), SHEET_PDF)
+    if not os.path.exists(stored):
+        # Sheets uploaded before the combined PDF was kept: build it from the page images and keep it.
+        build_sheet_pdf(paths, stored)
+    with open(stored, "rb") as f:
+        return Response(content=f.read(), media_type="application/pdf", headers=headers)
 
 
 # ---- Teacher views --------------------------------------------------------------------

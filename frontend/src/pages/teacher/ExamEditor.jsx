@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createExam, errorMessage, extractAnswerKey, getExam, publishExam, updateExam } from '../../api';
+import { createExam, errorMessage, extractAnswerKey, fetchAnswerKeyUrl, getExam, publishExam, updateExam } from '../../api';
+import PdfPreview from '../../components/PdfPreview';
 import { SUB_DOMAINS } from '../../utils/grading';
 import FileUpload from '../../components/FileUpload';
 import Icon from '../../components/Icon';
@@ -227,6 +228,17 @@ export default function ExamEditor() {
                 </Button>
               )}
             </div>
+          )}
+          {keyFile && exam && progress === null && (
+            <PdfPreview
+              key={`${exam.id}-${keyFile.name}-${questions.length}`}
+              bare
+              defaultOpen
+              load={() => fetchAnswerKeyUrl(exam.id)}
+              title="Uploaded answer key"
+              description="The key exactly as it was uploaded, so you can check the extracted questions against it."
+              filename={keyFile.name}
+            />
           )}
         </Section>
 

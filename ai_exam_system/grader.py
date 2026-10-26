@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 
 from agents.evaluator import evaluate_questions
@@ -103,6 +104,56 @@ def _num(value, default: float) -> float:
         return default
 
 
+# ---- Cutting the sheet into per-question answers, and marking objective questions in code -------
+_ANSWER_START = re.compile(r"(?m)^[ \t]*(?:Q(?:uestion)?\.?[ \t]*)?(\d{1,3})[ \t]*[\.\):\-]")
+
+
+def split_answers(text: str, numbers: list[int]) -> dict[int, str]:
+    """
+    Cuts the extracted text into one answer per question, using the question numbers the student wrote.
+    Each question's number is looked for after the previous one, so a numbered list inside an answer
+    ("1. first point") cannot be mistaken for a question. Questions whose number isn't found are left out.
+    """
+    starts = [(m.start(), int(m.group(1)), m.end()) for m in _ANSWER_START.finditer(text)]
+    found: list[tuple[int, int, int]] = []
+    pos = -1
+    for n in numbers:
+        hit = next((s for s in starts if s[0] > pos and s[1] == n), None)
+        if hit:
+            found.append((n, hit[0], hit[2]))
+            pos = hit[0]
+    segments = {}
+    for i, (n, start, body_start) in enumerate(found):
+        end = found[i + 1][1] if i + 1 < len(found) else len(text)
+        # An answer also stops where the next number begins, even if that question isn't in the exam
+        # (for example stray writing numbered 36 after question 35).
+        stray = next((s[0] for s in starts if s[0] > start and s[1] == n + 1), end)
+        segments[n] = text[body_start:min(end, stray)].strip()[:1500]
+    return segments
+
+
+def _choice(text: str) -> str | None:
+    """The option a short answer names: 'D) All of ...' -> 'D', '(c) Agile' -> 'C', 'True' -> 'true'."""
+    t = text.strip()
+    m = re.match(r"^[\s\(\[]*(?:([A-E])(?:[\)\]\.:]|\s|$)|([a-e])(?:[\)\]\.:]|$))", t)
+    if m:
+        return (m.group(1) or m.group(2)).upper()
+    m = re.match(r"^\W*(true|false)\b", t, re.IGNORECASE)
+    return m.group(1).lower() if m else None
+
+
+def grade_objective(q: dict, student_text: str) -> dict | None:
+    """Exact marking of a single-choice question. None when either side doesn't name a clear option."""
+    if q["type"] != "objective":
+        return None
+    chosen, key = _choice(student_text), _choice(q["referenceAnswer"])
+    if not chosen or not key:
+        return None
+    ok = chosen == key
+    return {"awarded": q["marks"] if ok else 0, "confidence": 0.9,
+            "justification": f"Chose {chosen}; matches the key." if ok else f"Chose {chosen}; the key is {key}."}
+
+
 # ---- The job -------------------------------------------------------------------------------
 def _update(submission_id: str, **fields):
     db = SessionLocal()
@@ -130,8 +181,17 @@ async def run_grading(submission_id: str):
     try:
         async with _pipeline_lock:
             _update(submission_id, stage="ocr", error=None)
-            await unload_model("llama3:latest")
-            student_text = await extract_handwritten_text(image_paths)
+            # Reading the pages is the slowest step, so keep its result: a re-run after a later failure reuses it.
+            ocr_cache = os.path.join(os.path.dirname(image_paths[0]), "ocr.txt")
+            if os.path.exists(ocr_cache):
+                with open(ocr_cache, encoding="utf-8") as f:
+                    student_text = f.read()
+            else:
+                await unload_model("llama3:latest")
+                student_text = await extract_handwritten_text(image_paths)
+                if student_text.strip():
+                    with open(ocr_cache, "w", encoding="utf-8") as f:
+                        f.write(student_text)
             if not student_text.strip():
                 raise ValueError("No text could be read from the uploaded photos.")
 
@@ -142,9 +202,24 @@ async def run_grading(submission_id: str):
             for q in questions:
                 if q["type"] == "subjective":
                     material[q["number"]] = best_chunk(f"{q['text']} {q['referenceAnswer']}", chunks)
-            for i in range(0, len(questions), BATCH_SIZE):
-                batch = questions[i:i + BATCH_SIZE]
-                raw = await evaluate_questions(student_text, batch, {n: material[n] for n in (q["number"] for q in batch) if material.get(n)})
+            # Give each question its own answer when the numbering can be followed; otherwise let the model search.
+            segments = split_answers(student_text, [q["number"] for q in questions])
+            per_question = len(segments) >= len(questions) / 2
+            if not per_question:
+                segments = {}
+            # Objective questions are marked in code (instant and exact); only the rest need the language model.
+            to_model = []
+            for q in questions:
+                quick = grade_objective(q, segments.get(q["number"], "")) if per_question else None
+                if quick:
+                    results[q["number"]] = quick
+                else:
+                    to_model.append(q)
+            for i in range(0, len(to_model), BATCH_SIZE):
+                batch = to_model[i:i + BATCH_SIZE]
+                raw = await evaluate_questions(
+                    student_text, batch, {n: material[n] for n in (q["number"] for q in batch) if material.get(n)},
+                    answers={q["number"]: segments.get(q["number"], "") for q in batch} if per_question else None)
                 results.update(parse_batch(raw))
 
         db = SessionLocal()
@@ -153,11 +228,12 @@ async def run_grading(submission_id: str):
             for q in questions:
                 item = results.get(q["number"])
                 if item is None:
-                    db.add(AnswerRow(submission_id=submission_id, question_id=q["id"], ocr_text="", ai_score=0,
+                    db.add(AnswerRow(submission_id=submission_id, question_id=q["id"], ocr_text=segments.get(q["number"], ""), ai_score=0,
                                      confidence=0.3, relevance=0.5, flagged_reason="parse_failure",
                                      justification="The grader returned no result for this question."))
                     continue
-                text = str(item.get("student_answer", "") or "")
+                text = segments.get(q["number"]) if per_question else str(item.get("student_answer", "") or "")
+                text = text or ""
                 awarded = max(0.0, min(float(q["marks"]), _num(item.get("awarded"), 0.0)))
                 db.add(AnswerRow(
                     submission_id=submission_id, question_id=q["id"], ocr_text=text, ai_score=awarded,

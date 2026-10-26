@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import pymupdf
 from PIL import Image
@@ -12,6 +13,28 @@ def pdf_to_images(pdf_path: str, dpi: int = 150) -> list[Image.Image]:
             pix = page.get_pixmap(dpi=dpi)
             images.append(Image.frombytes("RGB", (pix.width, pix.height), pix.samples))
     return images
+
+
+def build_sheet_pdf(sources: list[str], out_path: str) -> None:
+    """Merges uploaded PDFs and photos, in order, into one PDF for the teacher. A single PDF is kept as it is."""
+    if len(sources) == 1 and sources[0].lower().endswith(".pdf"):
+        shutil.copyfile(sources[0], out_path)
+        return
+    doc = pymupdf.open()
+    try:
+        for path in sources:
+            if path.lower().endswith(".pdf"):
+                with pymupdf.open(path) as src:
+                    doc.insert_pdf(src)
+            else:
+                with pymupdf.open(path) as img:
+                    rect = img[0].rect
+                    width = 595  # A4 width in points; the height keeps the photo's proportions
+                    page = doc.new_page(width=width, height=rect.height * width / rect.width)
+                    page.insert_image(page.rect, filename=path)
+        doc.save(out_path, garbage=3, deflate=True)
+    finally:
+        doc.close()
 
 
 def save_images(images: list[Image.Image], output_dir: str, prefix: str = "page") -> list[str]:

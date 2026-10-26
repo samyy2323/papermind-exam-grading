@@ -8,6 +8,7 @@ import ReferencePdfLink from '../../components/ReferencePdfLink';
 import { Alert, Badge, Button, Card, EmptyState, Loading, PageHeader, ProgressBar, StatusBadge } from '../../components/ui';
 
 const MAX_PAGES = 30;
+const isPdf = (f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
 
 export default function AnswerSheets() {
   const { examId } = useParams();
@@ -27,7 +28,7 @@ export default function AnswerSheets() {
 
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
-  useEffect(() => () => pagesRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
+  useEffect(() => () => pagesRef.current.forEach((p) => p.url && URL.revokeObjectURL(p.url)), []);
 
   const refreshSheets = () => getSubmissions(examId).then(setSheets).catch((e) => setError(errorMessage(e)));
 
@@ -51,19 +52,19 @@ export default function AnswerSheets() {
 
   // ---- photos -----------------------------------------------------------------
   const clearPages = () => {
-    pagesRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+    pagesRef.current.forEach((p) => p.url && URL.revokeObjectURL(p.url));
     setPages([]);
   };
   const addFiles = (files) => {
-    const imgs = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const accepted = Array.from(files).filter((f) => f.type.startsWith('image/') || isPdf(f));
     setPages((prev) =>
-      [...prev, ...imgs.map((file) => ({ id: `${file.name}-${file.lastModified}-${Math.random()}`, file, url: URL.createObjectURL(file) }))].slice(0, MAX_PAGES),
+      [...prev, ...accepted.map((file) => ({ id: `${file.name}-${file.lastModified}-${Math.random()}`, file, url: isPdf(file) ? null : URL.createObjectURL(file) }))].slice(0, MAX_PAGES),
     );
   };
   const removePage = (id) =>
     setPages((prev) => {
       const p = prev.find((x) => x.id === id);
-      if (p) URL.revokeObjectURL(p.url);
+      if (p?.url) URL.revokeObjectURL(p.url);
       return prev.filter((x) => x.id !== id);
     });
   const move = (i, dir) =>
@@ -257,7 +258,7 @@ export default function AnswerSheets() {
                 <div>
                   <h2 className="text-lg font-semibold">Upload answer sheet — {selected.name}</h2>
                   <p className="text-sm text-ink-soft">
-                    Roll no. <span className="font-mono">{selected.rollNumber}</span> · photograph every page in order, in good light, with the whole page in frame.
+                    Roll no. <span className="font-mono">{selected.rollNumber}</span> · upload photos of every page in order (good light, whole page in frame) or a scanned PDF. Everything is combined into one PDF for review.
                   </p>
                 </div>
                 {selectedSheet && (
@@ -278,11 +279,11 @@ export default function AnswerSheets() {
                 <FileUpload
                   multiple
                   compact
-                  accept={{ 'image/*': ['.jpg', '.jpeg', '.png', '.heic', '.webp'] }}
+                  accept={{ 'image/*': ['.jpg', '.jpeg', '.png', '.webp'], 'application/pdf': ['.pdf'] }}
                   onFiles={addFiles}
                   disabled={pages.length >= MAX_PAGES || uploadPct !== null}
-                  title="Drag & drop page photos"
-                  hint="JPG, PNG, HEIC"
+                  title="Drag & drop page photos or a PDF"
+                  hint="JPG, PNG, WebP or PDF"
                   icon="image"
                 />
                 <button
@@ -311,14 +312,21 @@ export default function AnswerSheets() {
               {pages.length > 0 && (
                 <>
                   <div className="mb-2 mt-5 flex items-baseline justify-between text-xs text-ink-soft">
-                    <span>Check the order — page 1 first. Use the arrows to reorder.</span>
-                    <span className="tabular-nums">{pages.length} / {MAX_PAGES} pages</span>
+                    <span>Check the order — first page first. Use the arrows to reorder.</span>
+                    <span className="tabular-nums">{pages.length} / {MAX_PAGES} files</span>
                   </div>
                   <ol className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                     {pages.map((p, i) => (
                       <li key={p.id} className="relative overflow-hidden rounded-md border border-line bg-paper-2">
-                        <img src={p.url} alt={`Page ${i + 1}`} className="aspect-[3/4] w-full object-cover" />
-                        <span className="absolute left-2 top-2 rounded bg-ink/85 px-1.5 py-0.5 text-xs font-semibold text-paper">Page {i + 1}</span>
+                        {p.url ? (
+                          <img src={p.url} alt={`Page ${i + 1}`} className="aspect-[3/4] w-full object-cover" />
+                        ) : (
+                          <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 bg-paper-2 text-ink-soft">
+                            <Icon name="file" size={34} />
+                            <span className="text-xs font-semibold">PDF</span>
+                          </div>
+                        )}
+                        <span className="absolute left-2 top-2 rounded bg-ink/85 px-1.5 py-0.5 text-xs font-semibold text-paper">{p.url ? 'Page' : 'PDF'} {i + 1}</span>
                         <button type="button" onClick={() => removePage(p.id)} className="absolute right-2 top-2 rounded-full bg-card/95 p-1 text-ink-soft shadow hover:text-bad" aria-label={`Remove page ${i + 1}`}>
                           <Icon name="x" size={14} strokeWidth={2.4} />
                         </button>

@@ -6,6 +6,7 @@ from typing import List, Optional
 import aiofiles
 import pymupdf
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -256,6 +257,20 @@ async def upload_answer_key(
     exam.answer_key_file = os.path.basename(path)
     db.commit()
     return [{"id": new_id(), **q} for q in questions]
+
+
+@router.get("/exams/{exam_id}/answer-key-file")
+def answer_key_file(exam_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The answer key as uploaded, so the teacher can read it next to the extracted questions."""
+    exam = own_exam(db, user, exam_id)
+    if not exam.answer_key_file:
+        raise HTTPException(status_code=404, detail="No answer key has been uploaded for this exam.")
+    path = os.path.join("data", "keys", exam.id, os.path.basename(exam.answer_key_file))
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="The uploaded answer key is no longer on the server.")
+    media = "application/pdf" if path.lower().endswith(".pdf") else "text/plain; charset=utf-8"
+    with open(path, "rb") as f:
+        return Response(content=f.read(), media_type=media, headers={"Content-Disposition": f'inline; filename="{os.path.basename(path)}"'})
 
 
 # ---- Roster ------------------------------------------------------------------

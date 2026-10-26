@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { errorMessage, getSubmission, markReviewed, overrideScore, reprocessSubmission } from '../../api';
+import { errorMessage, fetchSheetPdfUrl, getSubmission, markReviewed, overrideScore, reprocessSubmission } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 import useAsync from '../../utils/useAsync';
 import QuestionBreakdown from '../../components/QuestionBreakdown';
 import ScoreSummary from '../../components/ScoreSummary';
+import PdfPreview from '../../components/PdfPreview';
 import { Alert, Button, Card, Loading, PageHeader, Spinner } from '../../components/ui';
 
 export default function SubmissionReview() {
@@ -53,7 +54,9 @@ export default function SubmissionReview() {
   const { exam, submission } = data;
   const back = { to: `/teacher/review?exam=${exam.id}`, label: 'Back to review dashboard' };
 
-  if (submission.status === 'processing') {
+  // Still being graded and nothing has gone wrong: show a waiting card. A failed or interrupted sheet
+  // falls through to the page below, which explains the problem and offers Reprocess.
+  if (submission.status === 'processing' && !submission.error) {
     return (
       <>
         <PageHeader back={back} title={submission.studentName} subtitle={`${exam.title} · ${exam.subject}`} />
@@ -84,6 +87,12 @@ export default function SubmissionReview() {
       ) : (
       <div className="space-y-6">
         <ScoreSummary exam={exam} submission={submission} mode="teacher" />
+        <PdfPreview
+          load={() => fetchSheetPdfUrl(submission.id)}
+          title="Answer sheet (PDF)"
+          description={`All uploaded pages of ${submission.studentName}'s sheet combined in one PDF.`}
+          filename={`answer-sheet-${submission.usn}.pdf`}
+        />
         <QuestionBreakdown exam={exam} submission={submission} mode="teacher" onOverride={handleOverride} onMarkReviewed={handleReviewed} />
       </div>
       )}
