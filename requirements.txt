@@ -9,3 +9,4 @@ httpx
 Pillow
 pdf2image
 aiofiles
+pymupdf

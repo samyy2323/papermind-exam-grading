@@ -1,0 +1,17 @@
+﻿venv/
+node_modules/
+frontend/dist/
+exam_ai.db
+testdata/
+__pycache__/
+data/output/
+
+# Runtime data, secrets and private files
+data/secret.key
+data/*.log
+data/keys/
+data/input/*
+!data/input/.gitkeep
+report/
+.env
+*.db

@@ -11,6 +11,9 @@ import logging
 from ai_exam_system.database import engine, get_db, Base
 from ai_exam_system.models import Result
 from ai_exam_system.crew import run_pipeline
+from ai_exam_system.grader import mark_interrupted
+from ai_exam_system.routes_core import router as core_router
+from ai_exam_system.routes_submissions import router as submissions_router
 from utils.pdf_utils import pdf_to_images, save_images
 
 import aiofiles
@@ -23,6 +26,9 @@ logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI Exam Assessment System")
+app.include_router(core_router)
+app.include_router(submissions_router)
+mark_interrupted()
 
 # Setup static and templates
 os.makedirs("static", exist_ok=True)
