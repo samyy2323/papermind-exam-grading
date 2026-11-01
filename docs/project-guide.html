@@ -101,6 +101,7 @@
   <a href="#architecture">4. Architecture</a>
   <a href="#workflow">5. End-to-end workflow</a>
   <a href="#grading">6. The grading pipeline</a>
+  <a href="#fast">6a. How we made grading fast</a>
   <a href="#review">7. Review rules</a>
   <a href="#key">8. Answer-key extraction</a>
   <a href="#data">9. Data model</a>
@@ -329,6 +330,78 @@
 <p>On a CPU, <strong>the time is almost all spent generating text</strong>, about 4 tokens per second. So every design choice aims to make the model write less: MCQs are marked in code, each question is given only its own answer, replies are short JSON with a hard cap, and the saved handwriting text means a re-run never reads the pages twice. Batches of eight keep each reply short, so a failure loses a few questions and not the whole sheet.</p>
 </section>
 
+<!-- ============================================================ 6a -->
+<section id="fast">
+<h2><span class="num">6a</span>How we made grading fast</h2>
+<p class="lead">A six-page, 35-question sheet went from <strong>over an hour</strong> of grading to <strong>about 3 minutes</strong>. This page records exactly how, so you can explain it in the viva and reuse the idea.</p>
+
+<div class="callout"><strong class="t">The one rule behind everything</strong>
+<p>On a CPU, <strong>time is roughly the number of tokens the model writes divided by about 4 per second</strong> (we measured 3.2 to 4.4 tokens per second with Llama 3 8B). Reading a prompt is comparatively cheap; <em>writing</em> is slow. So making grading fast means making the model write fewer words.</p></div>
+
+<h3>The four versions we went through</h3>
+<p>All rows below are the same kind of work: grade a sheet against the answer key. The last three rows are the same sheet, Student_13 (6 pages, 35 questions). Reading the handwriting took about 12 minutes every time and is not included.</p>
+<div class="scroll"><table>
+<tr><th>Version</th><th>What it did</th><th>Grading time</th></tr>
+<tr><td>1. The original</td><td>One request for the whole paper; the model wrote an evaluation and a total, plus a scheme-building step and a validation step. Totals only, and the "marks available" were sometimes wrong.</td><td>about 9 to 11 min for 2 to 4 pages</td></tr>
+<tr><td>2. Per-question JSON, no limits</td><td>Every question graded in batches of eight, each answer copied back in the reply. <strong>No limit on the reply length.</strong></td><td>First batch 18 min 40 s, second still running after 25 min. About 4,500 tokens written for 8 questions instead of about 800. Stopped at 55 min.</td></tr>
+<tr><td>3. Schema and length cap</td><td>Same as 2, but Ollama was told the exact JSON shape (so it stops when the JSON is complete) and a maximum reply length.</td><td>7 to 8 min per batch of 8, about 35 min for the sheet</td></tr>
+<tr><td>4. Final</td><td>MCQs marked in code; each descriptive question shown only its own answer; short justifications.</td><td><strong>about 3 min</strong> (1 min 45 s and 1 min 15 s for the two batches)</td></tr>
+</table></div>
+
+<svg viewBox="0 0 760 230" role="img" aria-label="Grading time for the same six-page sheet in versions 2, 3 and 4">
+  <text class="md" x="10" y="22">Grading time for Student_13 (minutes)</text>
+  <text class="sm" x="10" y="64">Version 2 (no limits)</text>
+  <rect x="190" y="46" width="540" height="26" rx="5" fill="var(--bad-soft)" stroke="var(--bad)" stroke-width="1.6"/>
+  <text class="sm" x="200" y="64">more than 60 (stopped after 55)</text>
+  <text class="sm" x="10" y="114">Version 3 (schema + cap)</text>
+  <rect x="190" y="96" width="315" height="26" rx="5" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.6"/>
+  <text class="sm" x="200" y="114">about 35</text>
+  <text class="sm" x="10" y="164">Version 4 (final)</text>
+  <rect x="190" y="146" width="27" height="26" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/>
+  <text class="sm" x="226" y="164">about 3</text>
+  <path d="M190 190 H730" stroke="var(--line)" stroke-width="1.6"/>
+  <text class="sm" x="190" y="210">0</text><text class="sm" x="445" y="210">30</text><text class="sm" x="715" y="210">60</text>
+</svg>
+
+<h3>What we changed, in the order it mattered</h3>
+<ol class="steps">
+  <li><h3>Stop the runaway reply</h3>
+    <p>Ollama's log showed the model writing and writing after the JSON was done. We now pass Ollama the JSON <em>schema</em> (so it stops when the object is complete) and a hard cap of 80 tokens per question plus 60. Even in the worst case a batch can no longer take 20 minutes. <code>utils/ollama_client.py → generate(json_schema=…, num_predict=…)</code></p></li>
+  <li><h3>Do not make the model copy what we already have</h3>
+    <p>It used to repeat each student's answer (up to 25 words) inside its reply. The text is already in the handwriting output, so code now cuts it into one answer per question by question number. That is free and exact. <code>grader.split_answers</code></p></li>
+  <li><h3>Do not ask the model what code can answer</h3>
+    <p>For single-choice questions, the student's letter is compared with the key in code: zero tokens, exact, instant. In the test paper this removes 20 of the 35 questions from the model's work. <code>grader.grade_objective</code></p></li>
+  <li><h3>Ask for less</h3>
+    <p>For each descriptive question the model returns only the marks, a confidence number and a justification of at most 12 words. Roughly 45 tokens per entry (estimated from the timings) instead of the 130 or so we measured before.</p></li>
+  <li><h3>Show each question only its own answer</h3>
+    <p>The prompt used to contain the whole 8,000-character handwriting text for every batch. Now each question carries just its own answer. The prompt is smaller, the model does not have to hunt for the answer, and the context window drops to 6,144 tokens.</p></li>
+  <li><h3>Never repeat the slowest step</h3>
+    <p>The handwriting text is saved as <code>ocr.txt</code> next to the uploaded pages. Pressing Reprocess, or a retry after any later failure, skips the 12 minutes of reading. (A server restart used to throw it away.)</p></li>
+</ol>
+
+<h3>How to measure this yourself</h3>
+<p>Ollama prints a line for every few tokens it generates. The speed is the <code>tg</code> value (tokens per second) and the count is <code>n_gen</code>. Minutes for a reply are about <code>n_gen ÷ tg ÷ 60</code>.</p>
+<pre><button class="copy">copy</button><code>Get-Content "$env:LOCALAPPDATA\Ollama\server.log" -Tail 5
+# slot print_timing: ... n_gen = 1066, tg = 4.35 t/s      ->  about 4 minutes of writing</code></pre>
+
+<h3>What is still slow, and what we gave up</h3>
+<ul>
+  <li><strong>Reading the handwriting</strong> is now the slowest step: about 2 minutes per page with Qwen2.5-VL 3B. It cannot be shortened on a CPU without a smaller vision model or a graphics card.</li>
+  <li><strong>Speed does not fix reading quality.</strong> On Student_18 the 3B vision model misread or missed 7 of the 20 multiple-choice letters and stopped reading after question 24. The code then marked the misread letters faithfully, and the answers that were never read show as "No answer written" with 0 marks.</li>
+  <li><strong>We did not compare accuracy between versions 2, 3 and 4.</strong> The final version's accuracy against the teacher is in section 15.</li>
+  <li>Justifications are now one short line rather than a sentence or two. That is enough for the teacher to see why a mark was given, but it is less detail.</li>
+</ul>
+
+<h3>Rules of thumb for the team</h3>
+<ul>
+  <li><strong>Tokens are the budget.</strong> Before adding anything to a prompt or a reply, ask what it costs in minutes.</li>
+  <li><strong>Always cap the reply</strong> and describe its exact shape to the model.</li>
+  <li><strong>If code can do it, code should do it:</strong> splitting text, comparing letters, adding up marks.</li>
+  <li><strong>Save expensive results</strong> (the handwriting text) so a retry never repeats them.</li>
+  <li><strong>Measure from the log,</strong> not from guesses. Our first estimate for this sheet was wrong by an hour.</li>
+</ul>
+</section>
+
 <!-- ============================================================ 7 -->
 <section id="review">
 <h2><span class="num">7</span>Review rules: when does a mark go to the teacher?</h2>
@@ -336,10 +409,11 @@
 <table>
 <tr><th>Rule</th><th>Condition</th><th>Why</th></tr>
 <tr><td>Low confidence</td><td>confidence &lt; 0.6</td><td>The grader says it is unsure of its own mark (for example unclear handwriting).</td></tr>
-<tr><td>Missing answer</td><td>no answer text was extracted</td><td>Either the student skipped it or the handwriting reading missed it; a person should check.</td></tr>
 <tr><td>Relevance mismatch</td><td>subjective question, relevance &lt; 0.35 <em>and</em> mark ≥ 70% of the maximum</td><td>A high mark for an answer that does not resemble the key can mean a lucky guess, a keyword-stuffed answer, or an attempt to influence the grader.</td></tr>
-<tr><td>Parse failure</td><td>the grader returned nothing usable for the question</td><td>Safety net so nothing silently scores zero.</td></tr>
+<tr><td>Parse failure</td><td>the grader returned nothing usable for a question that has an answer</td><td>Safety net so a real answer never silently scores zero.</td></tr>
 </table>
+<div class="callout"><strong class="t">Unanswered questions are not flagged</strong>
+<p>When no answer text exists for a question, the grader gives it <strong>0 marks without asking the model</strong>, labels it <em>No answer written</em>, and does <strong>not</strong> send it to the review queue. One caveat: the system cannot tell a question the student left blank from one the handwriting reading failed to pick up. On a hard sheet (Student_18) the vision model stopped reading after question 24, so the later answers show as "No answer written". If a mark looks too low, open the sheet PDF on the review page and check.</p></div>
 <h3>Relevance score</h3>
 <p>The share of the student's content words (words longer than three letters, minus common filler) that also appear in the reference answer, multiplied by 1.5 and capped at 1. It is a simple word-overlap measure, not an embedding similarity. It is cheap, it runs instantly, and it is only used for the mismatch rule above.</p>
 <h3>What the teacher can do</h3>

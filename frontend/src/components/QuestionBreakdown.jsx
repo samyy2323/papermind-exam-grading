@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchExamDiagramUrl, fetchSheetDiagramUrl } from '../api';
 import Icon from './Icon';
 import { Badge, Button, MismatchWarning, Alert } from './ui';
 import { answerFlags, effectiveScore, needsReview, CONFIDENCE_THRESHOLD, formatDateTime } from '../utils/grading';
@@ -45,6 +46,8 @@ export default function QuestionBreakdown({ exam, submission, mode = 'student', 
               key={q.id}
               question={q}
               answer={ans}
+              examId={exam.id}
+              submissionId={submission.id}
               mode={mode}
               expanded={open.has(q.id)}
               onToggle={() => toggle(q.id)}
@@ -58,7 +61,8 @@ export default function QuestionBreakdown({ exam, submission, mode = 'student', 
   );
 }
 
-function QuestionRow({ question: q, answer: a, mode, expanded, onToggle, onOverride, onMarkReviewed }) {
+function QuestionRow({ question: q, answer: a, examId, submissionId, mode, expanded, onToggle, onOverride, onMarkReviewed }) {
+  const isDiagram = /\[(diagram|map)\]/i.test(q.text);
   const pending = needsReview(a, q);
   const flags = answerFlags(a, q);
   const score = effectiveScore(a);
@@ -84,11 +88,7 @@ function QuestionRow({ question: q, answer: a, mode, expanded, onToggle, onOverr
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             <Badge tone="neutral">{objective ? 'Objective' : 'Subjective'}</Badge>
-            {mode === 'teacher' && pending && flags.answerNotFound && (
-              <Badge tone="warn" icon="alert">
-                Answer not found
-              </Badge>
-            )}
+            {flags.answerNotFound && <Badge tone="neutral">No answer written</Badge>}
             {mode === 'teacher' && pending && flags.segmentationUncertain && (
               <Badge tone="warn" icon="alert">
                 Segmentation uncertain
@@ -117,12 +117,19 @@ function QuestionRow({ question: q, answer: a, mode, expanded, onToggle, onOverr
 
       {expanded && (
         <div id={panelId} className="border-t border-line/70 bg-paper/40 px-4 pb-5 pt-4 sm:pl-16">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <AnswerBlock label="Student answer (extracted from handwriting)" tone="student">
-              {a.ocrText || <span className="italic text-muted">No text detected.</span>}
-            </AnswerBlock>
-            <AnswerBlock label="Reference answer">{q.referenceAnswer}</AnswerBlock>
-          </div>
+          {isDiagram ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <DiagramBlock label="Student's drawing" load={() => fetchSheetDiagramUrl(submissionId, q.number)} />
+              <DiagramBlock label="Teacher's drawing (from the answer key)" load={() => fetchExamDiagramUrl(examId, q.number)} />
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AnswerBlock label="Student answer (extracted from handwriting)" tone="student">
+                {a.ocrText || <span className="italic text-muted">No answer written.</span>}
+              </AnswerBlock>
+              <AnswerBlock label="Reference answer">{q.referenceAnswer}</AnswerBlock>
+            </div>
+          )}
 
           {objective ? (
             <div className={`mt-4 flex items-center gap-2 text-sm font-medium ${correct ? 'text-ok' : 'text-bad'}`}>
@@ -203,6 +210,44 @@ function AnswerBlock({ label, tone, children }) {
         }`}
       >
         {children}
+      </div>
+    </div>
+  );
+}
+
+// A drawing shown as a picture; click it to open it full size in a new tab.
+function DiagramBlock({ label, load }) {
+  const [url, setUrl] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let objectUrl;
+    let cancelled = false;
+    load()
+      .then((u) => {
+        objectUrl = u;
+        if (cancelled) URL.revokeObjectURL(u);
+        else setUrl(u);
+      })
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
+      <div className="flex min-h-40 items-center justify-center rounded-md border border-line bg-card p-2">
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer" title="Open full size">
+            <img src={url} alt={label} className="max-h-96 w-auto max-w-full object-contain" />
+          </a>
+        ) : (
+          <span className="text-sm italic text-muted">{failed ? 'No drawing found.' : 'Loading drawing…'}</span>
+        )}
       </div>
     </div>
   );

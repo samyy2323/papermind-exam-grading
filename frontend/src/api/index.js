@@ -96,6 +96,16 @@ export const fetchSheetPdfUrl = async (submissionId) => {
   return URL.createObjectURL(res.data);
 };
 
+// The teacher's drawing for a diagram question (from the answer key) and the student's page it was compared with.
+export const fetchExamDiagramUrl = async (examId, number) => {
+  const res = await http.get(`/exams/${examId}/diagrams/${number}`, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
+};
+export const fetchSheetDiagramUrl = async (submissionId, number) => {
+  const res = await http.get(`/answer-sheets/${submissionId}/diagrams/${number}`, { responseType: 'blob' });
+  return URL.createObjectURL(res.data);
+};
+
 // Opens the answer-sheet PDF in a new tab.
 export const openReferencePdf = async (submissionId) => {
   const url = await fetchSheetPdfUrl(submissionId);

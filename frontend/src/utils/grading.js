@@ -18,12 +18,13 @@ export function answerFlags(answer, question) {
       segmentationUncertain: answer.flaggedReason === 'segmentation_uncertain',
     };
   }
-  const lowConfidence = answer.confidence < CONFIDENCE_THRESHOLD;
+  const answerNotFound = !answer.ocrText?.trim();
+  // An unanswered question is simply worth 0; it is never treated as uncertain.
+  const lowConfidence = !answerNotFound && answer.confidence < CONFIDENCE_THRESHOLD;
   const relevanceMismatch =
     question.type === 'subjective' &&
     answer.relevance < LOW_RELEVANCE_THRESHOLD &&
     answer.aiScore / question.marks >= HIGH_SCORE_RATIO;
-  const answerNotFound = !answer.ocrText?.trim();
   return { lowConfidence, relevanceMismatch, answerNotFound, segmentationUncertain: false };
 }
 
@@ -32,7 +33,7 @@ export function needsReview(answer, question) {
   if (answer.override || answer.reviewed) return false;
   if (typeof answer.pendingReview === 'boolean') return answer.pendingReview;
   const f = answerFlags(answer, question);
-  return f.lowConfidence || f.relevanceMismatch || f.answerNotFound || f.segmentationUncertain;
+  return f.lowConfidence || f.relevanceMismatch || f.segmentationUncertain;
 }
 
 export function summarizeSubmission(submission, exam) {

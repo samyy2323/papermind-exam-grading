@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import unicodedata
 
 import pymupdf
 
@@ -21,7 +22,7 @@ async def read_key_text(path: str, workdir: str) -> str:
         with pymupdf.open(path) as doc:
             text = "\n".join(page.get_text() for page in doc)
         if len(text.strip()) >= 40:
-            return text
+            return unicodedata.normalize("NFKC", text)  # typed PDFs store "fi"/"fl" as single ligature glyphs
         pages = save_images(pdf_to_images(path), workdir, prefix="key")
         return await extract_handwritten_text(pages)
     with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -36,7 +37,7 @@ def _looks_objective(answer: str) -> bool:
 # A line such as "Answer: B", "Ans - Paris" or "Correct answer: (c) ..." that starts the answer part of an entry
 _ANSWER_LINE = re.compile(r"(?im)^[ \t]*(?:correct[ \t]+|model[ \t]+|expected[ \t]+)?(?:answer|ans\.?|key|solution)[ \t]*[:\-–—][ \t]*")
 _ANSWER_INLINE = re.compile(r"(?i)[ \t](?:answer|ans)[ \t]*[:\-–—][ \t]*")
-_MARKS_TAG = re.compile(r"[\[\(][ \t]*(\d+(?:\.\d+)?)[ \t]*(?:marks?|m|pts?|points?)[ \t]*[\]\)]", re.IGNORECASE)
+_MARKS_TAG = re.compile(r"[\[\(]\s*(\d+(?:\.\d+)?)\s*(?:marks?|m|pts?|points?)\s*[\]\)]", re.IGNORECASE)  # may wrap onto the next line
 _SECTION = re.compile(r"^[ \t]*(?:part|section)\b", re.IGNORECASE)
 _MARKS_EACH = re.compile(r"(\d+(?:\.\d+)?)[ \t]*marks?[ \t]*each", re.IGNORECASE)
 _OPTION_LINE = re.compile(r"^[ \t]*\(?[A-Ea-e][\.\)][ \t]+\S")

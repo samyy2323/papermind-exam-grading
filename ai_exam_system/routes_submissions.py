@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import json
 import os
+import re
 from typing import List, Optional
 
 import aiofiles
@@ -10,9 +12,10 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from agents.diagram_checker import key_diagrams
 from ai_exam_system.database import get_db
 from ai_exam_system.grader import answer_flags, effective_score, needs_review, run_grading
-from ai_exam_system.models import AnswerRow, Exam, RosterStudent, Submission, User, new_id, now_iso
+from ai_exam_system.models import AnswerRow, Exam, Question, RosterStudent, Submission, User, new_id, now_iso
 from ai_exam_system.routes_core import exam_dict, own_exam
 from ai_exam_system.security import current_user
 from utils.pdf_utils import build_sheet_pdf, pdf_to_images, save_images
@@ -175,6 +178,32 @@ def reference_pdf(submission_id: str, user: User = Depends(current_user), db: Se
         build_sheet_pdf(paths, stored)
     with open(stored, "rb") as f:
         return Response(content=f.read(), media_type="application/pdf", headers=headers)
+
+
+@router.get("/exams/{exam_id}/diagrams/{number}")
+def exam_diagram(exam_id: str, number: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The teacher's drawing for a diagram question, cut out of the answer key PDF."""
+    exam = own_exam(db, user, exam_id)
+    path = os.path.join("data", "keys", exam.id, os.path.basename(exam.answer_key_file or ""))
+    image = key_diagrams(path).get(number) if exam.answer_key_file and os.path.exists(path) else None
+    if image is None:
+        raise HTTPException(status_code=404, detail="No drawing was found under this question in the answer key.")
+    return Response(content=base64.b64decode(image), media_type="image/jpeg")
+
+
+@router.get("/answer-sheets/{submission_id}/diagrams/{number}")
+def sheet_diagram(submission_id: str, number: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The page of the student's sheet that was compared with the teacher's drawing for this question."""
+    sub, _ = own_submission(db, user, submission_id)
+    row = (db.query(AnswerRow).join(Question, Question.id == AnswerRow.question_id)
+           .filter(AnswerRow.submission_id == sub.id, Question.number == number).first())
+    found = re.search(r"on page (\d+)", (row.justification or "") if row else "")
+    paths = [p for p in json.loads(sub.files_json or "[]") if os.path.exists(p)]
+    page = int(found.group(1)) - 1 if found else 0
+    if not paths or page >= len(paths):
+        raise HTTPException(status_code=404, detail="The uploaded page is no longer on the server.")
+    with open(paths[page], "rb") as f:
+        return Response(content=f.read(), media_type="image/jpeg" if paths[page].lower().endswith((".jpg", ".jpeg")) else "image/png")
 
 
 # ---- Teacher views --------------------------------------------------------------------
